@@ -8,6 +8,7 @@ export class Connect4Game {
       Array(cols).fill(null)
     )
     this.gameOver = false
+    this.gameDraw = false
     this.history = []
   }
 
@@ -17,13 +18,17 @@ export class Connect4Game {
       if (this.board[row][col] === null) {
         this.board[row][col] = this.currentPlayerIndex
         this.history.push({ row, col, player: this.currentPlayerIndex })
+        if (this.checkFull()) {
+          this.gameDraw = true
+          this.gameOver = true
+        }
         if (this.checkWin(row, col)) {
           this.gameOver = true
         } else {
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length
         }
+        return { row, col, player: this.board[row][col] }
       }
-      return { row, col, player: this.board[row][col] }
     }
 
     return null
@@ -35,6 +40,7 @@ export class Connect4Game {
     this.board[lastMove.row][lastMove.col] = null
     this.currentPlayerIndex = lastMove.player
     this.gameOver = false
+    this.gameDraw = false
   }
 
   checkWin(row, col) {
@@ -77,6 +83,10 @@ export class Connect4Game {
     return false
   }
 
+  checkFull() {
+    return this.board[0].every(cell => cell !== null)
+  }
+
   saveState() {
     const state = {
       rows: this.rows,
@@ -86,6 +96,7 @@ export class Connect4Game {
       currentPlayerIndex: this.currentPlayerIndex,
       history: this.history,
       gameOver: this.gameOver,
+      gameDraw: this.gameDraw,
       winningCells: this.winningCells || null
     }
     localStorage.setItem("connect4State", JSON.stringify(state))
@@ -95,6 +106,7 @@ export class Connect4Game {
     const clone = new Connect4Game(this.rows, this.cols, this.players)
     clone.currentPlayerIndex = this.currentPlayerIndex
     clone.gameOver = this.gameOver
+    clone.gameDraw = this.gameDraw
     clone.board = this.board.map(row => row.slice())
     clone.winningCells = this.winningCells ? this.winningCells.slice() : null
     return clone
@@ -109,6 +121,7 @@ export class Connect4Game {
     game.currentPlayerIndex = state.currentPlayerIndex
     game.history = state.history
     game.gameOver = state.gameOver
+    game.gameDraw = state.gameDraw
     game.winningCells = state.winningCells
     return game
   }

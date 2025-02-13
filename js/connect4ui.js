@@ -28,11 +28,17 @@ export class Connect4UI {
     const move = this.game.dropToken(col)
     if (move) {
       this.animateTokenDrop(move.row, col, this.game.players[move.player].color)
-      this.render()
       this.game.saveState()
+      this.render()
       if (this.game.gameOver) {
+        if (this.game.gameDraw) {
+          this.statusEl.textContent = "It's a Draw!"
+          return
+        }
         this.highlightWin()
         this.statusEl.textContent = `${this.game.players[move.player].name} wins!`
+      } else {
+        this.statusEl.textContent = `${this.game.players[this.game.currentPlayerIndex].name}'s turn`
       }
     }
   }

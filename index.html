@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Connect 4</title>
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="css/index.css" />
   </head>
   <body>
     <div id="setup">
@@ -31,7 +31,7 @@
         </label>
         <label>
           Player Columns:
-          <input type="number" id="board-colors" value="7" min="4" required />
+          <input type="number" id="board-cols" value="7" min="4" required />
         </label>
         <label>
           Mode:
@@ -45,6 +45,11 @@
       </form>
     </div>
     <div id="game-container" style="display: none;">
+      <h2 id="game-status">Game in Progress</h2>
+      <div id="board"></div>
+      <button id="undo-btn">Undo</button>
+      <button id="reset-btn">Reset</button>
     </div>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>
