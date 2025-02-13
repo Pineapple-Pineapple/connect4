@@ -1,0 +1,49 @@
+<!doctype HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connect 4</title>
+  </head>
+  <body>
+    <div id="setup">
+      <form id="setup-form">
+        <label>
+          Player 1 Name:
+          <input type="text" id="player1-name" required />
+        </label>
+        <label>
+          Player 1 Token Color:
+          <input type="color" id="player1-color" required />
+        </label>
+        <label>
+          Player 2 Name:
+          <input type="text" id="player2-name" required />
+        </label>
+        <label>
+          Player 2 Token Color:
+          <input type="color" id="player2-color" required />
+        </label>
+        <label>
+          Player Rows:
+          <input type="number" id="board-rows" value="6" min="4" required />
+        </label>
+        <label>
+          Player Columns:
+          <input type="number" id="board-colors" value="7" min="4" required />
+        </label>
+        <label>
+          Mode:
+          <select id="game-mode">
+            <option value="two-player" selected>Two Players</option>
+            <option value="single-player">Single Player (vs AI)</option>
+          </select>
+        </label>
+        <br />
+        <button type="submit">Start Game</button>
+      </form>
+    </div>
+    <div id="game-container" style="display: none;">
+    </div>
+  </body>
+</html>
