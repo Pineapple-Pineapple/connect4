@@ -1,0 +1,43 @@
+.stats {
+    padding: var(--space-md);
+    background-color: var(--bg);
+    border-radius: 8px;
+    margin: var(--space-md);
+}
+
+.scores {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-sm);
+}
+
+.board {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border-radius: 8px;
+    margin: var(--space-md);
+}
+
+.cell {
+    aspect-ratio: 1;
+    background-color: var(--bg);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.game-end {
+    background-color: var(--bg);
+    padding: var(--space-md);
+    border-radius: 8px;
+    margin: var(--space-md);
+    text-align: center;
+}
+
+.game-controls{
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+  align-items: center;
+}

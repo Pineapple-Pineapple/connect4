@@ -1,128 +1,120 @@
-export class Connect4Game {
-  constructor(rows, cols, players) {
-    this.rows = rows
-    this.cols = cols
-    this.players = players
-    this.currentPlayerIndex = 0
-    this.board = Array.from({ length: rows }, () => 
-      Array(cols).fill(null)
-    )
-    this.gameOver = false
-    this.gameDraw = false
-    this.history = []
-  }
+export class Connect4 {
+    constructor(rows = 6, cols = 7) {
+        this.rows = rows;
+        this.cols = cols;
+        this.board = Array(rows).fill().map(() => Array(cols).fill(0));
+        this.moves = [];
+        this.isGameOver = false;
+        this.isDraw = false;
+        this.winner = null;
+    }
 
-  dropToken(col) {
-    if (this.gameOver) return false
-    for (let row = this.rows - 1; row >= 0; row--) {
-      if (this.board[row][col] === null) {
-        this.board[row][col] = this.currentPlayerIndex
-        this.history.push({ row, col, player: this.currentPlayerIndex })
-        if (this.checkFull()) {
-          this.gameDraw = true
-          this.gameOver = true
+    getNextBoardState(board, column, player) {
+        const newBoard = board.map(row => [...row]);
+        const row = this.getLowestEmptyRow(board, column);
+        
+        if (row === -1) return null;
+        
+        newBoard[row][column] = player;
+        return newBoard;
+    }
+
+    makeMove(column) {
+        if (this.isGameOver || !this.isValidMove(this.board, column)) {
+            return null;
         }
-        if (this.checkWin(row, col)) {
-          this.gameOver = true
-        } else {
-          this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length
+
+        const row = this.getLowestEmptyRow(this.board, column);
+        if (row === -1) return null;
+
+        const currentPlayer = this.getCurrentPlayer();
+        this.board[row][column] = currentPlayer;
+        this.moves.push(column);
+
+        if (this.isWinningMove(this.board, row, column)) {
+            this.isGameOver = true;
+            this.winner = currentPlayer;
+            return { row, column, type: 'win', player: currentPlayer };
         }
-        return { row, col, player: this.board[row][col] }
-      }
+
+        if (this.moves.length === this.rows * this.cols) {
+            this.isGameOver = true;
+            this.isDraw = true;
+            return { row, column, type: 'draw', player: currentPlayer };
+        }
+
+        return { row, column, type: 'ongoing', player: currentPlayer };
     }
 
-    return null
-  }
-
-  undo() {
-    if (this.history.length === 0) return false
-    const lastMove = this.history.pop()
-    this.board[lastMove.row][lastMove.col] = null
-    this.currentPlayerIndex = lastMove.player
-    this.gameOver = false
-    this.gameDraw = false
-  }
-
-  checkWin(row, col) {
-    const dirs = [
-      { dr: 0, dc: 1 },
-      { dr: 1, dc: 0 },
-      { dr: 1, dc: 1 },
-      { dr: 1, dc: -1 }
-    ]
-    const currentPlayer = this.board[row][col]
-
-    for (const { dr, dc } of dirs) {
-      let count = 1
-      const winningCells = [[row, col]]
-
-      for (let i = 1; i < 4; i++) {
-        const nr = row + dr * i
-        const nc = col + dc * i
-        if (nr < 0 || nr >= this.rows || nc < 0 || nc >= this.cols || this.board[nr][nc] !== currentPlayer) break
-
-        count++
-        winningCells.push([nr, nc])
-      }
-
-      for (let i = 1; i < 4; i++) {
-        const nr = row - dr * i
-        const nc = col - dc * i
-        if (nr < 0 || nr >= this.rows || nc < 0 || nc >= this.cols || this.board[nr][nc] !== currentPlayer) break
-
-        count++
-        winningCells.push([nr, nc])
-      }
-
-      if (count >= 4) {
-        this.winningCells = winningCells
-        return true
-      }
+    getCurrentPlayer() {
+        return (this.moves.length % 2) + 1;
     }
 
-    return false
-  }
-
-  checkFull() {
-    return this.board[0].every(cell => cell !== null)
-  }
-
-  saveState() {
-    const state = {
-      rows: this.rows,
-      cols: this.cols,
-      board: this.board,
-      players: this.players,
-      currentPlayerIndex: this.currentPlayerIndex,
-      history: this.history,
-      gameOver: this.gameOver,
-      gameDraw: this.gameDraw,
-      winningCells: this.winningCells || null
+    isValidMove(board, column) {
+        return column >= 0 && 
+               column < this.cols && 
+               board[0][column] === 0;
     }
-    localStorage.setItem("connect4State", JSON.stringify(state))
-  }
 
-  clone() {
-    const clone = new Connect4Game(this.rows, this.cols, this.players)
-    clone.currentPlayerIndex = this.currentPlayerIndex
-    clone.gameOver = this.gameOver
-    clone.gameDraw = this.gameDraw
-    clone.board = this.board.map(row => row.slice())
-    clone.winningCells = this.winningCells ? this.winningCells.slice() : null
-    return clone
-  }
+    getLowestEmptyRow(board, column) {
+        for (let row = this.rows - 1; row >= 0; row--) {
+            if (board[row][column] === 0) {
+                return row;
+            }
+        }
+        return -1;
+    }
 
-  static loadState() {
-    const stateStr = localStorage.getItem("connect4State")
-    if (!stateStr) return null
-    const state = JSON.parse(stateStr)
-    const game = new Connect4Game(state.rows, state.cols, state.players)
-    game.board = state.board
-    game.currentPlayerIndex = state.currentPlayerIndex
-    game.history = state.history
-    game.gameOver = state.gameOver
-    game.gameDraw = state.gameDraw
-    game.winningCells = state.winningCells
-    return game
-  }
+    getWinner() {
+      return this.winner;
+    }
+
+    isWinningMove(board, row, column) {
+        const directions = [
+            [0, 1],   // Horizontal
+            [1, 0],   // Vertical
+            [1, 1],   // Diagonal /
+            [1, -1]   // Diagonal \
+        ];
+
+        const player = board[row][column];
+        
+        return directions.some(([dRow, dCol]) => 
+            this.countInDirection(board, row, column, dRow, dCol, player) +
+            this.countInDirection(board, row, column, -dRow, -dCol, player) - 1 >= 4
+        );
+    }
+
+    countInDirection(board, row, col, dRow, dCol, player) {
+        let count = 0;
+        let currentRow = row;
+        let currentCol = col;
+
+        while (
+            currentRow >= 0 && 
+            currentRow < this.rows &&
+            currentCol >= 0 && 
+            currentCol < this.cols &&
+            board[currentRow][currentCol] === player
+        ) {
+            count++;
+            currentRow += dRow;
+            currentCol += dCol;
+        }
+
+        return count;
+    }
+
+    reset() {
+        this.board = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.moves = [];
+        this.isGameOver = false;
+        this.isDraw = false;
+        this.winner = null;
+    }
+
+    getBoard() { return this.board; }
+    getMoves() { return [...this.moves]; }
+    getIsGameOver() { return this.isGameOver; }
+    getIsDraw() { return this.isDraw; }
 }

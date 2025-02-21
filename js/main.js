@@ -1,65 +1,93 @@
-import { Connect4Game } from "./connect4.js"
-import { Connect4UI } from "./connect4ui.js"
+import { Connect4 } from './connect4.js';
+import { SettingsManager } from './settings.js';
+import { GameStateManager } from './gameState.js';
+import { UIManager } from './ui.js';
 
-let game = null
-let ui = null
+class GameManager {
+  constructor() {
+    this.connect4 = new Connect4();
 
-document.getElementById("setup-form").addEventListener("submit", (e) => {
-  e.preventDefault()
+    this.gameStateManager = new GameStateManager(this);
+    this.settingsManager = new SettingsManager(this);
+    this.uiManager = new UIManager(this);
 
-  const player1 = {
-    name: document.getElementById("player1-name").value,
-    color: document.getElementById("player1-color").value
+    this.gameContainer = document.getElementById('game-container');
+    this.settingsContainer = document.getElementById('settings-container');
+    this.settingsForm = this.settingsContainer.querySelector('form');
+
+    this.initializeEventListeners();
+
+    this.showSettings();
   }
-  const player2 = {
-    name: document.getElementById("player2-name").value,
-    color: document.getElementById("player2-color").value
+
+  initializeEventListeners() {
+    this.settingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.settingsManager.savePlayerSettings(1);
+      this.settingsManager.savePlayerSettings(2);
+      this.settingsManager.saveBoardSettings();
+      this.handleNewGame();
+    });
+
+    document.getElementById('save-1').addEventListener('click', () => {
+      this.settingsManager.savePlayerSettings(1);
+    });
+
+    document.getElementById('save-2').addEventListener('click', () => {
+      this.settingsManager.savePlayerSettings(2);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.toggleSettings();
+      }
+    });
+
+
+    document.getElementById('reset-stats').addEventListener('click', () => {
+      this.gameStateManager.resetStats();
+      this.uiManager.updateStats();
+    });
   }
 
-  const rows = parseInt(document.getElementById("board-rows").value)
-  const cols = parseInt(document.getElementById("board-cols").value)
+  handleNewGame() {
+    const { rows, cols } = this.settingsManager.getBoardSettings();
+    this.connect4 = new Connect4(rows, cols);
 
-  game = new Connect4Game(rows, cols, [player1, player2])
-  ui = new Connect4UI(game, document.getElementById("game-container"))
-  document.getElementById("setup").style.display = "none"
-  document.getElementById("game-container").style.display = "block"
-  ui.statusEl.textContent = `${game.players[game.currentPlayerIndex].name}'s turn`
-  game.saveState()
-})
+    this.gameStateManager.resetGame();
 
-document.getElementById("reset-btn").addEventListener("click", () => {
-  localStorage.removeItem("connect4State")
-  location.reload()
-})
+    this.uiManager.initializeBoard();
 
-document.getElementById("undo-btn").addEventListener("click", () => {
-  game.undo()
-  ui.render()
-  ui.statusEl.textContent = `${game.players[game.currentPlayerIndex].name}'s turn`
-  game.saveState()
-})
-
-document.addEventListener("keydown", function (e) {
-  if (game && !game.gameOver) {
-    const col = parseInt(e.key) - 1
-    if (!isNaN(col) && col >= 0 && col < game.cols) {
-      ui.handleCellClick(col)
-    }
+    this.hideSettings();
+    this.showGame();
   }
-})
 
-window.addEventListener("load", () => {
-  const savedGame = Connect4Game.loadState()
-  if (savedGame) {
-    game = savedGame
-    document.getElementById("setup").style.display = "none"
-    document.getElementById("game-container").style.display = "block"
-    ui = new Connect4UI(game, document.getElementById("game-container"))
-    if (game.gameOver) {
-      if (game.gameDraw) ui.statusEl.textContent = "It's a Draw!"
-      else ui.statusEl.textContent = `${game.players[game.currentPlayerIndex].name} wins!`
+  showSettings() {
+    this.settingsContainer.style.display = 'block';
+  }
+
+  hideSettings() {
+    this.settingsContainer.style.display = 'none';
+  }
+
+  showGame() {
+    this.gameContainer.style.display = 'block';
+  }
+
+  hideGame() {
+    this.gameContainer.style.display = 'none';
+  }
+
+  toggleSettings() {
+    if (this.settingsContainer.style.display === 'none') {
+      this.showSettings();
+      this.hideGame();
     } else {
-      ui.statusEl.textContent = `${game.players[game.currentPlayerIndex].name}'s turn`
+      this.hideSettings();
+      this.showGame();
     }
   }
-})
+}
+
+const gameManager = new GameManager();
+window.gameManager = gameManager;

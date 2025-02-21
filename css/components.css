@@ -1,0 +1,62 @@
+/* Cards */
+.card-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--space-md);
+  background-color: var(--bg);
+  padding: var(--space-lg);
+  border-radius: 8px;
+  margin: var(--space-lg);
+  width: 90%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background-color: var(--bg_s);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: var(--space-sm);
+  width: 100%;
+  text-align: center;
+}
+
+.card-content {
+  text-align: center;
+  border-top: 2px solid var(--gray);
+  display: flex;
+  gap: var(--space-xs);
+  flex-direction: column;
+}
+
+#settings-container form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: scroll;
+}
+
+/* Buttons */
+button {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-primary {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.btn-secondary {
+  background: var(--bg2);
+  color: var(--fg);
+}
+
+/* Connect 4 Grid */
