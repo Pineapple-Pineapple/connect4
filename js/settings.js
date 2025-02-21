@@ -1,161 +1,80 @@
-class SettingsManager {
-  constructor() {
-    if (!localStorage.getItem("settings")) {
-      this.resetToDefaults()
+export class SettingsManager {
+    constructor(gameManager) {
+        this.gameManager = gameManager;
+        this.loadSettings();
     }
 
-    this.loadSettings()
-    this.setupEventListeners()
-  }
+    loadSettings() {
+        // Load or initialize default settings
+        this.settings = JSON.parse(localStorage.getItem('settings')) || {
+            player1: {
+                name: 'Player 1',
+                color: '#fb4934'
+            },
+            player2: {
+                name: 'Player 2',
+                color: '#fabd2f'
+            },
+            board: {
+                rows: 6,
+                cols: 7,
+                color: '#83a598'
+            }
+        };
 
-  get defaultSettings() {
-    return {
-      player1: {
-        name: '',
-        color: '#fb4934'
-      },
-      player2: {
-        name: '',
-        color: '#fabd2f'
-      },
-      board: {
-        rows: 6,
-        columns: 7,
-        color: '#83a598'
-      }
-    }
-  }
-
-  get settings() {
-    return JSON.parse(localStorage.getItem("settings"))
-  }
-
-  resetToDefaults() {
-    localStorage.setItem("settings", JSON.stringify(this.defaultSettings))
-  }
-
-  updateSettings(newSettings) {
-    const current = this.settings
-    const updated = { ...current, ...newSettings }
-    localStorage.setItem("settings", JSON.stringify(updated))  
-  }
-
-  loadSettings() {
-    const settings = this.settings
-
-    document.getElementById("name-1").value = settings.player1.name
-    document.getElementById("color-1").value = settings.player1.color
-
-    document.getElementById("name-2").value = settings.player2.name
-    document.getElementById("color-2").value = settings.player2.color
-
-    document.getElementById("board-rows").value = settings.board.rows
-    document.getElementById("board-cols").value = settings.board.columns
-    document.getElementById("board-color").value = settings.board.color
-  }
-
-  validatePlayerInput(playerNumber) {
-    const nameInput = document.getElementById(`name-${playerNumber}`)
-    const name = nameInput.value.trim()
-
-    if (name === "") {
-      nameInput.setCustomValidity(`Player ${playerNumber} name cannot be empty.`)
-    } else {
-      const otherPlayerNumber = playerNumber === 1 ? 2 : 1
-      const otherName = document.getElementById(`name-${otherPlayerNumber}`).value.trim()
-
-      if (name && otherName && name.toLowerCase() === otherName.toLowerCase()) {
-        nameInput.setCustomValidity("Players must have different names.")
-      } else {
-        nameInput.setCustomValidity("")
-      }
+        // Initialize form with current settings
+        this.updateFormWithSettings();
     }
 
-    nameInput.reportValidity()
-    return nameInput.checkValidity()
-  }
+    updateFormWithSettings() {
+        // Player 1 settings
+        document.getElementById('name-1').value = this.settings.player1.name;
+        document.getElementById('color-1').value = this.settings.player1.color;
 
-  savePlayerSettings(playerNumber) {
-    if (!this.validatePlayerInput(playerNumber)) return
+        // Player 2 settings
+        document.getElementById('name-2').value = this.settings.player2.name;
+        document.getElementById('color-2').value = this.settings.player2.color;
 
-    const name = document.getElementById(`name-${playerNumber}`).value
-    const color = document.getElementById(`color-${playerNumber}`).value
+        // Board settings
+        document.getElementById('board-rows').value = this.settings.board.rows;
+        document.getElementById('board-cols').value = this.settings.board.cols;
+        document.getElementById('board-color').value = this.settings.board.color;
 
-    this.updateSettings({
-      [`player${playerNumber}`]: { name, color }
-    })
-  }
-
-  validateBoardSettings() {
-    const rowsInput = document.getElementById("board-rows")
-    const colsInput = document.getElementById("board-cols")
-
-    const rows = parseInt(rowsInput.value)
-    const cols = parseInt(colsInput.value)
-
-    let valid = true
-
-    if (rows < 4 || rows > 8) {
-      rowsInput.setCustomValidity("Rows must be between 4 and 8.")
-      valid = false
-    } else {
-      rowsInput.setCustomValidity("")
+        // Stats
+        document.getElementById('wins-1').textContent = this.gameManager.gameStateManager.getStats().player1Wins;
+        document.getElementById('wins-2').textContent = this.gameManager.gameStateManager.getStats().player2Wins;
+        document.getElementById('draws').textContent = this.gameManager.gameStateManager.getStats().draws;
     }
 
-    if (cols < 4 || cols > 8) {
-      colsInput.setCustomValidity("Columns must be between 4 and 8.")
-      valid = false
-    } else {
-      colsInput.setCustomValidity("")
+    savePlayerSettings(playerNum) {
+        const name = document.getElementById(`name-${playerNum}`).value;
+        const color = document.getElementById(`color-${playerNum}`).value;
+
+        this.settings[`player${playerNum}`] = { name, color };
+        localStorage.setItem('settings', JSON.stringify(this.settings));
     }
 
-    rowsInput.reportValidity()
-    colsInput.reportValidity()
+    saveBoardSettings() {
+        const rows = parseInt(document.getElementById('board-rows').value);
+        const cols = parseInt(document.getElementById('board-cols').value);
+        const color = document.getElementById('board-color').value;
 
-    return valid
-  }
+        this.settings.board = { rows, cols, color };
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+    }
 
-  saveBoardSettings(event) {
-    event.preventDefault()
+    getBoardSettings() {
+        const rows = parseInt(document.getElementById('board-rows').value);
+        const cols = parseInt(document.getElementById('board-cols').value);
+        const color = document.getElementById('board-color').value;
 
-    if (!this.validateBoardSettings()) return
+        this.settings.board = { rows, cols, color };
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+        
+        return this.settings.board;
+    }
 
-    const rows = parseInt(document.getElementById("board-rows").value)
-    const columns = parseInt(document.getElementById("board-cols").value)
-    const color = document.getElementById("board-color").value
-
-    this.updateSettings({
-      board: { rows, columns, color }
-    })
-
-    this.startGame()
-  }
-
-  startGame() {
-    document.getElementById("settings-container").style.display = "none"
-    document.getElementById("game-container").style.display = "block"
-  }
-
-  setupEventListeners() {
-    document.getElementById("save-1").addEventListener("click", () => {
-      this.savePlayerSettings(1)
-    })
-
-    document.getElementById("save-2").addEventListener("click", () => {
-      this.savePlayerSettings(2)
-    })
-
-    document.getElementById("start-game").addEventListener("click", (e) => {
-      this.savePlayerSettings(1)
-      this.savePlayerSettings(2)
-      this.saveBoardSettings(e)
-    })
-    
-    document.getElementById("name-1").addEventListener("input", () => this.validatePlayerInput(1));
-    document.getElementById("name-2").addEventListener("input", () => this.validatePlayerInput(2));
-    document.getElementById("board-rows").addEventListener("input", () => this.validateBoardSettings());
-    document.getElementById("board-cols").addEventListener("input", () => this.validateBoardSettings());
-  }
+    getPlayerSettings(playerNum) {
+        return this.settings[`player${playerNum}`];
+    }
 }
-
-const settingsManager = new SettingsManager()

@@ -21,6 +21,11 @@
   --gray: #928374;
   --orange: #fe8019;
 
+  .red {
+    background-color: var(--red);
+    color: var(--fg);
+  }
+
   /* Spacing */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
