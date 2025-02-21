@@ -2,101 +2,128 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Connect 4</title>
-	<link rel="stylesheet" href="css/theme.css" />
-	<link rel="stylesheet" href="css/components.css" />
-	<link rel="stylesheet" href="css/game.css" />
+	<link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
-	<header>
-		<h1>Connect 4</h1>
-	</header>
-	<div id="game-container" style="display: none"></div>
-	<div id="settings-container" style="display: none">
+	<div id="settings-container" style="display: none;">
+		<header class="settings-header">
+			<h1>Connect 4 Settings</h1>
+		</header>
+
 		<form>
-			<div class="card-layout">
-				<div class="card">
+			<div class="settings-grid">
+				<div class="settings-card">
 					<h2>Player 1</h2>
-					<div class="card-content">
-						<label>
-							<h3>Name</h3>
-							<input type="text" id="name-1" placeholder="player name..." required />
-						</label>
-						<label>
-							<h3>Color</h3>
-							<input type="color" id="color-1" value="#fb4934" required />
-						</label>
-						<button class="btn-secondary" type="button" id="save-1">Save</button>
+					<div class="form-group">
+						<label for="name-1">Name</label>
+						<input type="text" id="name-1" placeholder="player name..." required>
 					</div>
+					<div class="form-group">
+						<label for="color-1">Color</label>
+						<input type="color" id="color-1" value="#fb4934" required>
+					</div>
+					<button type="button" id="save-1" class="btn btn-secondary btn-block">Save</button>
 				</div>
-				<div class="card">
+
+				<div class="settings-card">
 					<h2>Player 2</h2>
-					<div class="card-content">
-						<label>
-							<h3>Name</h3>
-							<input type="text" id="name-2" placeholder="player name..." required />
-						</label>
-						<label>
-							<h3>Color</h3>
-							<input type="color" id="color-2" value="#fabd2f" required />
-						</label>
-						<button class="btn-secondary" type="button" id="save-2">Save</button>
+					<div class="form-group">
+						<label for="name-2">Name</label>
+						<input type="text" id="name-2" placeholder="player name..." required>
 					</div>
-				</div>
-				<div class="card">
-					<h2>Settings</h2>
-					<div class="card-content">
-						<label>
-							<h2>Rows</h2>
-							<input type="number" id="board-rows" min="4" max="8" value="6" required />
-						</label>
-						<label>
-							<h2>Columns</h2>
-							<input type="number" id="board-cols" min="4" max="8" value="7" required />
-						</label>
-						<label>
-							<h2>Board Color</h2>
-							<input type="color" id="board-color" value="#83a598" required />
-						</label>
-						<button type="submit" class="btn-primary" id="start-game">Start</button>
+					<div class="form-group">
+						<label for="color-2">Color</label>
+						<input type="color" id="color-2" value="#fabd2f" required>
 					</div>
+					<button type="button" id="save-2" class="btn btn-secondary btn-block">Save</button>
 				</div>
-				<div class="card">
-					<h2>Stats</h2>
-					<div class="card-content">
-						<div id="stats">
-							<h3 id="wins-1-name">Player 1 Wins</h3>
-							<div id="wins-1"></div>
-							<h3 id="wins-2-name">Player 2 Wins</h3>
-							<div id="wins-2"></div>
-							<h3>Draws</h3>
-							<div id="draws"></div>
+
+				<div class="settings-card">
+					<h2>Game Settings</h2>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="board-rows">Rows</label>
+							<input type="number" id="board-rows" min="4" max="8" value="6" required>
 						</div>
-						<button class="btn-primary red" type="button" id="reset-stats">Reset Game</button>
+						<div class="form-group">
+							<label for="board-cols">Columns</label>
+							<input type="number" id="board-cols" min="4" max="8" value="7" required>
+						</div>
 					</div>
+					<div class="form-group">
+						<label for="board-color">Board Color</label>
+						<input type="color" id="board-color" value="#83a598" required>
+					</div>
+					<button type="submit" id="start-game" class="btn btn-primary btn-block">Start Game</button>
+				</div>
+
+				<div class="settings-card">
+					<h2>Statistics</h2>
+					<div id="stats" class="stats-grid">
+						<div class="stat-item">
+							<h3 id="wins-1-name">Player 1 Wins</h3>
+							<div id="wins-1" class="stat-value">3</div>
+						</div>
+						<div class="stat-item">
+							<h3 id="wins-2-name">Player 2 Wins</h3>
+							<div id="wins-2" class="stat-value">2</div>
+						</div>
+						<div class="stat-item">
+							<h3>Draws</h3>
+							<div id="draws" class="stat-value">1</div>
+						</div>
+					</div>
+					<button type="button" id="reset-stats" class="btn btn-red btn-block">Reset Stats</button>
 				</div>
 			</div>
 		</form>
 	</div>
+
+	<div id="game-container" style="display: none;">
+	</div>
+
 	<template id="game-template">
-		<div class="board"></div>
-		<div id="game-stats">
-			<div id="current-player"></div>
-			<div class="scores">
-				<div id="player1-score"></div>
-				<div id="draws-score"></div>
-				<div id="player2-score"></div>
+		<header class="game-header">
+			<h1>Connect 4</h1>
+		</header>
+
+		<div class="game-layout">
+			<div class="board-container">
+				<div class="board"></div>
+				<div class="game-controls">
+					<button id="restart-game" class="btn btn-primary">Restart</button>
+					<button id="settings" class="btn btn-secondary">Settings</button>
+				</div>
+			</div>
+
+			<div class="game-sidebar">
+				<div class="current-player">
+					<h2>Current Turn</h2>
+					<div class="player-indicator">
+						<span id="current-player" class="game-end">Player 1</span>
+						<div class="player-color" id="player-color"></div>
+					</div>
+				</div>
+
+				<div id="game-stats" class="game-stats">
+					<h2>Stats</h2>
+					<div class="scores">
+						<div id="player1-score" class="game-stat-item">
+						</div>
+						<div id="draws-score" class="game-stat-item">
+						</div>
+						<div id="player2-score" class="game-stat-item">
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
-		<div class="game-end"></div>
-		<div class="game-controls">
-			<button class="btn-primary" id="restart-game">Restart</button>
-			<button class="btn-secondary" id="settings">Settings</button>
-		</div>
 	</template>
+
 	<script type="module" src="js/main.js"></script>
 </body>
 

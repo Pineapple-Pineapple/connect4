@@ -12,6 +12,11 @@ export class UIManager {
 
     // Get current settings
     const { rows, cols, color } = this.gameManager.settingsManager.getBoardSettings();
+    const player1Color = this.gameManager.settingsManager.getPlayerSettings(1).color;
+    const player2Color = this.gameManager.settingsManager.getPlayerSettings(2).color;
+
+    document.documentElement.style.setProperty('--player1-color', player1Color);
+    document.documentElement.style.setProperty('--player2-color', player2Color);
 
     // Set up board grid
     const board = this.gameContainer.querySelector('.board');
@@ -51,8 +56,10 @@ export class UIManager {
 
     // Update current player
     const currentPlayer = document.getElementById('current-player');
+    const playerColor = document.getElementById('player-color');
     if (this.gameManager.gameStateManager.getWinner() === null) {
-      currentPlayer.textContent = `Current Turn: ${this.getCurrentPlayerName()}`;
+      currentPlayer.textContent = this.getCurrentPlayerName();
+      playerColor.style.backgroundColor = this.getCurrentPlayerColor();
     }
 
     // Update scores
@@ -80,42 +87,60 @@ export class UIManager {
     this.updateCell(result.row, result.column, result.player);
 
     if (this.gameManager.connect4.getIsGameOver()) {
+      this.handleColumnHover(col, false, true);
       this.handleGameEnd();
     } else {
+      this.handleColumnHover(col, true);
       this.updateStats();
     }
   }
 
-  handleColumnHover(col, isEntering) {
-    if (this.gameManager.connect4.getIsGameOver()) return;
+  handleColumnHover(col, isEntering, finalMove = false) {
+      if (this.gameManager.connect4.getIsGameOver() && !finalMove) return;
 
-    const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
-    const playerColor = this.gameManager.settingsManager.getPlayerSettings(currentPlayer).color;
-    const board = this.gameManager.connect4.getBoard();
+      const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
+      const board = this.gameManager.connect4.getBoard();
+      const lowestEmptyRow = this.gameManager.connect4.getLowestEmptyRow(board, col);
 
-    const cells = document.querySelectorAll(`.cell[data-col="${col}"]`);
-    cells.forEach(cell => {
-      const row = parseInt(cell.dataset.row);
-      if (board[row][col] === 0) {
-        cell.style.backgroundColor = isEntering ?
-          this.adjustColorOpacity(playerColor, 0.3) :
-          'var(--bg)';
+      if (lowestEmptyRow !== -1) {
+          const cell = document.querySelector(`.cell[data-row="${lowestEmptyRow}"][data-col="${col}"]`);
+          if (isEntering) {
+              cell.classList.add(`player${currentPlayer}-hover`);
+          } else {
+              cell.classList.remove(`player${currentPlayer}-hover`);
+          }
       }
-    });
   }
 
-  updateCell(row, col, player) {
+  updateCell(row, col, player, winner = false) {
     const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-    const playerColor = this.gameManager.settingsManager.getPlayerSettings(player).color;
-    cell.style.backgroundColor = playerColor;
+    cell.classList.add(`player${player}`);
+    cell.classList.remove(`player${player}-hover`);
+    if (winner) {
+      cell.classList.add('winning-cell');
+    }
+  }
+
+  disableAllCells() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => cell.classList.add('disabled'));
+  }
+
+  enableAllCells() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => cell.classList.remove('disabled'));
   }
 
   handleGameEnd() {
     const gameEnd = this.gameContainer.querySelector('.game-end');
-    gameEnd.textContent = this.gameManager.connect4.getIsDraw() ?
-      "It's a draw!" :
-      `${this.getWinner()} wins!`;
+    const isDraw = this.gameManager.connect4.getIsDraw();
+    const winningCells = this.gameManager.connect4.getWinningCells();
+    gameEnd.textContent = isDraw ? "It's a draw!" : `${this.getWinner()} wins!`;
+    if (!isDraw) {
+      winningCells.forEach(cell => this.updateCell(cell[0], cell[1], this.gameManager.connect4.getWinner(), true));
+    }
     this.updateStats();
+    this.disableAllCells();
   }
 
   getCurrentPlayerName() {
@@ -123,16 +148,14 @@ export class UIManager {
     return this.gameManager.settingsManager.getPlayerSettings(currentPlayer).name;
   }
 
+  getCurrentPlayerColor() {
+    const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
+    return this.gameManager.settingsManager.getPlayerSettings(currentPlayer).color
+  }
+
   getWinner() {
     const winner = this.gameManager.gameStateManager.getWinner();
     return this.gameManager.settingsManager.getPlayerSettings(winner).name;
-  }
-
-  adjustColorOpacity(color, opacity) {
-    const r = parseInt(color.slice(1, 3), 16);
-    const g = parseInt(color.slice(3, 5), 16);
-    const b = parseInt(color.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
   handleRestart() {
