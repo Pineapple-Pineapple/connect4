@@ -10,7 +10,6 @@ export class Connect4 {
     this.winner = null;
   }
 
-  // Getters
   getBoard() {
     return this.board;
   }
@@ -35,7 +34,6 @@ export class Connect4 {
     return this.moves.length % 2 + 1;
   }
 
-  // Public methods
   makeMove(column) {
     if (this.isGameOver || !this.isValidMove(this.board, column)) {
       return null;
@@ -87,13 +85,12 @@ export class Connect4 {
     }
   }
 
-  // Private methods
   isValidMove(board, column) {
     return column >= 0 && column < this.cols && board[0][column] === 0;
   }
 
   isValidCell(row, column) {
-    return row >= 0 && row < this.rows && column >= 0 && column
+    return row >= 0 && row < this.rows && column >= 0 && column < this.cols
   }
 
   getLowestEmptyRow(board, column) {
@@ -106,7 +103,6 @@ export class Connect4 {
   }
 
   isWinningMove(board, row, column) {
-    // Check all four possible winning directions
     return (
       this.checkDirection(board, row, column, 0, 1) ||  // Horizontal
       this.checkDirection(board, row, column, 1, 0) ||  // Vertical
@@ -117,9 +113,8 @@ export class Connect4 {
 
   checkDirection(board, row, column, deltaRow, deltaCol) {
     const player = board[row][column];
-    const winningCells = [[row, column]];  // Start with the placed piece
-    
-    // Check positive direction
+    const winningCells = [[row, column]];
+
     let [r, c] = [row + deltaRow, column + deltaCol];
     while (this.isValidCell(r, c) && board[r][c] === player) {
       winningCells.push([r, c]);
@@ -127,7 +122,6 @@ export class Connect4 {
       c += deltaCol;
     }
 
-    // Check negative direction
     [r, c] = [row - deltaRow, column - deltaCol];
     while (this.isValidCell(r, c) && board[r][c] === player) {
       winningCells.unshift([r, c]);
@@ -142,7 +136,6 @@ export class Connect4 {
     return false;
   }
 
-  // Static methods
   static fromString(str) {
     const [rows, cols, movesStr] = str.split(';');
     const connect4 = new Connect4(parseInt(rows), parseInt(cols));
