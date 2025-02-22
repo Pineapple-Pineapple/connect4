@@ -198,11 +198,13 @@ export class UIManager {
     const player = this.gameManager.gameStateManager.getCurrentPlayer();
     const cell = document.querySelector(`.cell[data-row="${lowestRow}"][data-col="${col}"]`);
     cell.classList.add(`player${player}-hover`);
+    cell.parentElement.classList.add('column-hover');
   }
 
   clearColumnHoverState(col) {
     document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
       cell.classList.remove('player1-hover', 'player2-hover');
+      cell.parentElement.classList.remove('column-hover');
     });
   }
 
