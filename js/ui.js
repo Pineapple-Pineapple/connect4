@@ -192,7 +192,7 @@ export class UIManager {
 
   updateColumnHoverState(col) {
     const board = this.gameManager.connect4.getBoard();
-    const lowestRow = this.getLowestEmptyRow(board, col);
+    const lowestRow = this.gameManager.connect4.getLowestEmptyRow(board, col);
     if (lowestRow === -1) return;
 
     const player = this.gameManager.gameStateManager.getCurrentPlayer();
