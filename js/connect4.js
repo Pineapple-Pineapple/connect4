@@ -92,6 +92,10 @@ export class Connect4 {
     return column >= 0 && column < this.cols && board[0][column] === 0;
   }
 
+  isValidCell(row, column) {
+    return row >= 0 && row < this.rows && column >= 0 && column
+  }
+
   getLowestEmptyRow(board, column) {
     for (let row = this.rows - 1; row >= 0; row--) {
       if (board[row][column] === 0) {
@@ -102,42 +106,39 @@ export class Connect4 {
   }
 
   isWinningMove(board, row, column) {
+    // Check all four possible winning directions
     return (
-      this.checkDirection(board, row, column, 0, 1) ||
-      this.checkDirection(board, row, column, 1, 0) ||
-      this.checkDirection(board, row, column, 1, 1) ||
-      this.checkDirection(board, row, column, 1, -1)
+      this.checkDirection(board, row, column, 0, 1) ||  // Horizontal
+      this.checkDirection(board, row, column, 1, 0) ||  // Vertical
+      this.checkDirection(board, row, column, 1, 1) ||  // Diagonal down-right
+      this.checkDirection(board, row, column, 1, -1)     // Diagonal down-left
     );
   }
 
   checkDirection(board, row, column, deltaRow, deltaCol) {
     const player = board[row][column];
-    let count = 1;
-    let r = row + deltaRow;
-    let c = column + deltaCol;
-
-    while (r >= 0 && r < this.rows && c >= 0 && c < this.cols && board[r][c] === player) {
-      count++;
+    const winningCells = [[row, column]];  // Start with the placed piece
+    
+    // Check positive direction
+    let [r, c] = [row + deltaRow, column + deltaCol];
+    while (this.isValidCell(r, c) && board[r][c] === player) {
+      winningCells.push([r, c]);
       r += deltaRow;
       c += deltaCol;
     }
 
-    r = row - deltaRow;
-    c = column - deltaCol;
-    while (r >= 0 && r < this.rows && c >= 0 && c < this.cols && board[r][c] === player) {
-      count++;
+    // Check negative direction
+    [r, c] = [row - deltaRow, column - deltaCol];
+    while (this.isValidCell(r, c) && board[r][c] === player) {
+      winningCells.unshift([r, c]);
       r -= deltaRow;
       c -= deltaCol;
     }
 
-    if (count >= 4) {
-      this.winningCells = [[row, column]];
-      for (let i = 1; i < count; i++) {
-        this.winningCells.push([row + i * deltaRow, column + i * deltaCol]);
-      }
+    if (winningCells.length >= 4) {
+      this.winningCells = winningCells;
       return true;
     }
-
     return false;
   }
 
