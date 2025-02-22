@@ -42,10 +42,10 @@ class GameManager {
 
   initializeDOMElements() {
     const { containerIds } = this.config;
-    
+
     this.gameContainer = document.getElementById(containerIds.game);
     this.settingsContainer = document.getElementById(containerIds.settings);
-    
+
     if (!this.gameContainer || !this.settingsContainer) {
       throw new Error('Required game containers not found');
     }
@@ -64,9 +64,9 @@ class GameManager {
 
     this.settingsForm.addEventListener('submit', this.boundHandleSettingsSubmit);
 
-    this.addButtonListener(buttonIds.savePlayer1, () => 
+    this.addButtonListener(buttonIds.savePlayer1, () =>
       this.settingsManager.savePlayerSettings(1));
-    this.addButtonListener(buttonIds.savePlayer2, () => 
+    this.addButtonListener(buttonIds.savePlayer2, () =>
       this.settingsManager.savePlayerSettings(2));
     this.addButtonListener(buttonIds.resetStats, () => {
       this.gameStateManager.resetStats();
