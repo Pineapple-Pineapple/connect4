@@ -17,16 +17,16 @@ export class GameStateManager {
   }
 
   handleMove(column) {
-    const result = this.gameManager.connect4.makeMove(column);
+    const connect4 = this.gameManager.connect4;
+    const result = connect4.makeMove(column);
 
     if (!result) return null;
 
-    // Handle game end conditions
-    if (this.gameManager.connect4.getIsGameOver()) {
-      if (this.gameManager.connect4.getIsDraw()) {
+    if (connect4.getIsGameOver()) {
+      if (connect4.getIsDraw()) {
         this.stats.draws++;
       } else {
-        this.stats[`player${result.player}Wins`]++;
+        this.stats[`player${connect4.getWinner()}Wins`]++;
       }
       this.saveStats();
     }
@@ -60,6 +60,6 @@ export class GameStateManager {
   }
 
   getMoveHistory() {
-    return this.gameManager.connect4.getMoves();
+    return this.gameManager.connect4.moves;
   }
 }

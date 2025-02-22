@@ -2,167 +2,272 @@ export class UIManager {
   constructor(gameManager) {
     this.gameManager = gameManager;
     this.gameContainer = document.getElementById('game-container');
+    this.isProcessingMove = false;
+    this.hoveredColumn = null;
+    this.cachedElements = {};
+    this.isTouchDevice = 'ontouchstart' in window;
+    
     this.initializeBoard();
+    this.setupGlobalEvents();
+  }
+
+  setupGlobalEvents() {
+    const handlePointerAction = (e, isClick = false) => {
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const element = document.elementFromPoint(clientX, clientY);
+      const column = element?.closest('.column')?.dataset.col;
+      
+      this.clearAllHoverStates();
+      if (column !== undefined) {
+        isClick ? this.handleColumnClick(parseInt(column)) : this.handlePointerEnter(parseInt(column));
+      }
+    };
+
+    if (!this.isTouchDevice) {
+      document.addEventListener('mousemove', (e) => {
+        if (e.buttons === 1) handlePointerAction(e);
+      });
+
+      document.addEventListener('mouseup', (e) => handlePointerAction(e, true));
+    }
   }
 
   initializeBoard() {
-    // Clear and set up initial game elements from template
     const template = document.getElementById('game-template');
     this.gameContainer.innerHTML = template.innerHTML;
+    this.cacheDOMElements();
 
-    // Get current settings
     const { rows, cols, color } = this.gameManager.settingsManager.getBoardSettings();
-    const player1Color = this.gameManager.settingsManager.getPlayerSettings(1).color;
-    const player2Color = this.gameManager.settingsManager.getPlayerSettings(2).color;
+    const { player1Color, player2Color } = this.getPlayerColors();
 
-    document.documentElement.style.setProperty('--player1-color', player1Color);
-    document.documentElement.style.setProperty('--player2-color', player2Color);
-
-    // Set up board grid
-    const board = this.gameContainer.querySelector('.board');
-    board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    board.style.backgroundColor = color;
-
-    // Create cells
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.row = row;
-        cell.dataset.col = col;
-
-        cell.addEventListener('click', () => this.handleColumnClick(col));
-        cell.addEventListener('mouseenter', () => this.handleColumnHover(col, true));
-        cell.addEventListener('mouseleave', () => this.handleColumnHover(col, false));
-
-        board.appendChild(cell);
-      }
-    }
-
-    // Add event listeners for buttons
-    const restartButton = this.gameContainer.querySelector('#restart-game');
-    const settingsButton = this.gameContainer.querySelector('#settings');
-
-    restartButton.addEventListener('click', () => this.handleRestart());
-    settingsButton.addEventListener('click', () => this.handleSettings());
-
+    this.setCSSVariables(player1Color, player2Color);
+    this.createBoardStructure(rows, cols, color);
+    this.setupButtonEvents();
     this.updateStats();
   }
 
-  updateStats() {
-    const stats = this.gameManager.gameStateManager.getStats();
-    const player1 = this.gameManager.settingsManager.getPlayerSettings(1);
-    const player2 = this.gameManager.settingsManager.getPlayerSettings(2);
+  cacheDOMElements() {
+    const elements = {
+      board: '.board',
+      currentPlayer: '#current-player',
+      playerColor: '#player-color',
+      player1Score: '#player1-score',
+      drawsScore: '#draws-score',
+      player2Score: '#player2-score',
+      gameEnd: '.game-end',
+      restartButton: '#restart-game',
+      settingsButton: '#settings'
+    };
 
-    // Update current player
-    const currentPlayer = document.getElementById('current-player');
-    const playerColor = document.getElementById('player-color');
-    if (this.gameManager.gameStateManager.getWinner() === null) {
-      currentPlayer.textContent = this.getCurrentPlayerName();
-      playerColor.style.backgroundColor = this.getCurrentPlayerColor();
-    }
-
-    // Update scores
-    const player1Score = document.getElementById('player1-score');
-    const drawsScore = document.getElementById('draws-score');
-    const player2Score = document.getElementById('player2-score');
-
-    player1Score.textContent = `${player1.name}: ${stats.player1Wins}`;
-    drawsScore.textContent = `Draws: ${stats.draws}`;
-    player2Score.textContent = `${player2.name}: ${stats.player2Wins}`;
-
-    // Update settings stats
-    document.getElementById("wins-1-name").textContent = player1.name;
-    document.getElementById("wins-1").textContent = stats.player1Wins;
-    document.getElementById("wins-2-name").textContent = player2.name;
-    document.getElementById("wins-2").textContent = stats.player2Wins;
-    document.getElementById("draws").textContent = stats.draws;
+    Object.entries(elements).forEach(([key, selector]) => {
+      this.cachedElements[key] = this.gameContainer.querySelector(selector);
+    });
   }
 
-  handleColumnClick(col) {
-    const result = this.gameManager.gameStateManager.handleMove(col);
+  getPlayerColors() {
+    return {
+      player1Color: this.gameManager.settingsManager.getPlayerSettings(1).color,
+      player2Color: this.gameManager.settingsManager.getPlayerSettings(2).color
+    };
+  }
 
-    if (!result) return;
+  setCSSVariables(player1Color, player2Color) {
+    document.documentElement.style.setProperty('--player1-color', player1Color);
+    document.documentElement.style.setProperty('--player2-color', player2Color);
+  }
 
-    this.updateCell(result.row, result.column, result.player);
+  createBoardStructure(rows, cols, color) {
+    this.cachedElements.board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    this.cachedElements.board.style.backgroundColor = color;
 
-    if (this.gameManager.connect4.getIsGameOver()) {
-      this.handleColumnHover(col, false, true);
-      this.handleGameEnd();
-    } else {
-      this.handleColumnHover(col, true);
-      this.updateStats();
+    Array.from({ length: cols }).forEach((_, col) => {
+      const column = this.createColumn(col, rows);
+      this.cachedElements.board.appendChild(column);
+    });
+  }
+
+  createColumn(col, rows) {
+    const column = document.createElement('div');
+    column.className = 'column';
+    column.dataset.col = col;
+
+    Array.from({ length: rows }).forEach((_, row) => {
+      column.appendChild(this.createCell(row, col));
+    });
+
+    this.addColumnInteractions(column, col);
+    return column;
+  }
+
+  createCell(row, col) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.row = row;
+    cell.dataset.col = col;
+    return cell;
+  }
+
+  addColumnInteractions(column, col) {
+    const eventHandlers = {
+      mouseenter: () => this.handlePointerEnter(col),
+      mouseleave: () => this.handlePointerLeave(col),
+      mousedown: (e) => { if (!this.isTouchDevice) e.preventDefault() },
+      touchstart: (e) => { e.preventDefault(); this.handlePointerEnter(col) },
+      touchmove: (e) => this.handleTouchMove(e),
+      touchend: (e) => this.handleTouchEnd(e)
+    };
+
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
+      column.addEventListener(event, handler, event.startsWith('touch') ? { passive: false } : {});
+    });
+  }
+
+  handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const column = element?.closest('.column')?.dataset.col;
+    
+    if (column !== this.hoveredColumn) {
+      this.clearAllHoverStates();
+      column !== undefined && this.handlePointerEnter(parseInt(column));
     }
   }
 
-  handleColumnHover(col, isEntering, finalMove = false) {
-      if (this.gameManager.connect4.getIsGameOver() && !finalMove) return;
+  handleTouchEnd(e) {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const column = element?.closest('.column')?.dataset.col;
+    
+    this.clearAllHoverStates();
+    column !== undefined && this.handleColumnClick(parseInt(column));
+  }
 
-      const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
-      const board = this.gameManager.connect4.getBoard();
-      const lowestEmptyRow = this.gameManager.connect4.getLowestEmptyRow(board, col);
+  handlePointerEnter(col) {
+    if (this.gameManager.connect4.getIsGameOver()) return;
+    this.hoveredColumn = col;
+    this.updateColumnHoverState(col);
+  }
 
-      if (lowestEmptyRow !== -1) {
-          const cell = document.querySelector(`.cell[data-row="${lowestEmptyRow}"][data-col="${col}"]`);
-          if (isEntering) {
-              cell.classList.add(`player${currentPlayer}-hover`);
-          } else {
-              cell.classList.remove(`player${currentPlayer}-hover`);
-          }
+  handlePointerLeave(col) {
+    if (this.hoveredColumn === col) {
+      this.hoveredColumn = null;
+      this.clearColumnHoverState(col);
+    }
+  }
+
+  clearAllHoverStates() {
+    if (this.hoveredColumn !== null) {
+      this.clearColumnHoverState(this.hoveredColumn);
+      this.hoveredColumn = null;
+    }
+  }
+
+  async handleColumnClick(col) {
+    if (this.isProcessingMove || this.gameManager.connect4.getIsGameOver()) return;
+    
+    this.isProcessingMove = true;
+    try {
+      const result = await this.gameManager.gameStateManager.handleMove(col);
+      if (!result) return;
+
+      this.clearAllHoverStates();
+      this.updateCell(result.row, result.column, result.player);
+
+      if (this.gameManager.connect4.getIsGameOver()) {
+        this.handleGameEnd();
+      } else {
+        this.updateStats();
+        // Re-add hover state if mouse is still in the column
+        if (!this.isTouchDevice && document.querySelector(`.column[data-col="${col}"]:hover`)) {
+          this.handlePointerEnter(col);
+        }
       }
+    } finally {
+      this.isProcessingMove = false;
+    }
+  }
+
+  updateColumnHoverState(col) {
+    const board = this.gameManager.connect4.getBoard();
+    const lowestRow = this.getLowestEmptyRow(board, col);
+    if (lowestRow === -1) return;
+
+    const player = this.gameManager.gameStateManager.getCurrentPlayer();
+    const cell = document.querySelector(`.cell[data-row="${lowestRow}"][data-col="${col}"]`);
+    cell.classList.add(`player${player}-hover`);
+  }
+
+  clearColumnHoverState(col) {
+    document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
+      cell.classList.remove('player1-hover', 'player2-hover');
+    });
   }
 
   updateCell(row, col, player, winner = false) {
     const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-    cell.classList.add(`player${player}`);
-    cell.classList.remove(`player${player}-hover`);
-    if (winner) {
-      cell.classList.add('winning-cell');
-    }
+    cell.classList.remove('player1-hover', 'player2-hover');
+    cell.classList.add(`player${player}`, winner && 'winning-cell');
   }
 
-  disableAllCells() {
-    const cells = document.querySelectorAll('.cell');
-    cells.forEach(cell => cell.classList.add('disabled'));
-  }
+  updateStats() {
+    const stats = this.gameManager.gameStateManager.getStats();
+    const [player1, player2] = [1, 2].map(p => this.gameManager.settingsManager.getPlayerSettings(p));
 
-  enableAllCells() {
-    const cells = document.querySelectorAll('.cell');
-    cells.forEach(cell => cell.classList.remove('disabled'));
+    this.cachedElements.currentPlayer.textContent = this.getCurrentPlayerName();
+    this.cachedElements.playerColor.style.backgroundColor = this.getCurrentPlayerColor();
+
+    this.cachedElements.player1Score.textContent = `${player1.name}: ${stats.player1Wins}`;
+    this.cachedElements.drawsScore.textContent = `Draws: ${stats.draws}`;
+    this.cachedElements.player2Score.textContent = `${player2.name}: ${stats.player2Wins}`;
   }
 
   handleGameEnd() {
-    const gameEnd = this.gameContainer.querySelector('.game-end');
     const isDraw = this.gameManager.connect4.getIsDraw();
-    const winningCells = this.gameManager.connect4.getWinningCells();
-    gameEnd.textContent = isDraw ? "It's a draw!" : `${this.getWinner()} wins!`;
+    this.cachedElements.gameEnd.textContent = isDraw ? "It's a draw!" : `${this.getWinner()} wins!`;
+
     if (!isDraw) {
-      winningCells.forEach(cell => this.updateCell(cell[0], cell[1], this.gameManager.connect4.getWinner(), true));
+      this.gameManager.connect4.getWinningCells().forEach(cell => {
+        this.updateCell(cell[0], cell[1], this.gameManager.connect4.getWinner(), true);
+      });
     }
-    this.updateStats();
     this.disableAllCells();
+    this.updateStats();
+  }
+
+  disableAllCells() {
+    document.querySelectorAll('.cell').forEach(cell => cell.classList.add('disabled'));
   }
 
   getCurrentPlayerName() {
-    const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
-    return this.gameManager.settingsManager.getPlayerSettings(currentPlayer).name;
+    return this.getPlayerSetting('name');
   }
 
   getCurrentPlayerColor() {
-    const currentPlayer = this.gameManager.gameStateManager.getCurrentPlayer();
-    return this.gameManager.settingsManager.getPlayerSettings(currentPlayer).color
+    return this.getPlayerSetting('color');
+  }
+
+  getPlayerSetting(prop) {
+    const player = this.gameManager.gameStateManager.getCurrentPlayer();
+    return this.gameManager.settingsManager.getPlayerSettings(player)[prop];
   }
 
   getWinner() {
-    const winner = this.gameManager.gameStateManager.getWinner();
+    const winner = this.gameManager.connect4.getWinner();
     return this.gameManager.settingsManager.getPlayerSettings(winner).name;
   }
 
-  handleRestart() {
-    this.gameManager.handleNewGame();
+  setupButtonEvents() {
+    this.cachedElements.restartButton.addEventListener('click', () => this.gameManager.handleNewGame());
+    this.cachedElements.settingsButton.addEventListener('click', () => this.gameManager.toggleSettings());
   }
 
-  handleSettings() {
-    this.gameManager.toggleSettings();
+  getLowestEmptyRow(board, col) {
+    for (let row = board.length - 1; row >= 0; row--) {
+      if (board[row][col] === 0) return row;
+    }
+    return -1;
   }
 }
