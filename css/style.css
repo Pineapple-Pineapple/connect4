@@ -24,7 +24,7 @@
 
   --player1-color: var(--red);
   --player2-color: var(--yellow);
-  --board-color: var(--bg);
+  --board-color: var(--blue);
 }
 
 * {
@@ -39,6 +39,27 @@ body {
   color: var(--fg1);
   line-height: 1.6;
   min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--bg2);
+  margin-bottom: 1rem;
+}
+
+header h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.link-button {
+  color: var(--fg);
+  padding: 1rem;
+  font-size: 1rem;
+  text-decoration: none;
+  background-color: var(--bg2);
+  border-radius: 8px;
 }
 
 .btn {
@@ -99,26 +120,14 @@ body {
   padding: 2rem 1rem;
 }
 
-.settings-header {
-  text-align: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--bg2);
-  margin-bottom: 1rem;
-}
-
-.settings-header h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.settings-grid {
+.card-grid {
   display: flex;
   gap: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-.settings-card {
+.card {
   justify-content: center;
   background: var(--bg);
   border-radius: 8px;
@@ -128,7 +137,7 @@ body {
   min-width: calc(33% - 2rem);
 }
 
-.settings-card h2 {
+.card h2 {
   color: var(--fg);
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
@@ -180,13 +189,6 @@ body {
 
 .stats-grid {
   text-align: center;
-  margin-bottom: 1rem;
-}
-
-.game-header {
-  text-align: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--bg2);
   margin-bottom: 1rem;
 }
 

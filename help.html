@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 - Help</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Connect 4 - Help</h1>
+    </header>
+    <div class="card-container">
+      <div class="card" style="display: flex; justify-content: center">
+        <a class="link-button" href="index.html">Click here to go back</a>
+      </div>
+      <div class="card">
+        <h2>How to Play</h2>
+        <p>The goal of Connect 4 is to be the first player to form a line of four of your coloured discs in a row</p>
+      </div>
+      <div class="card">
+        <h2>The Board</h2>
+        <p>The game is usually played on a 6x7 board althought that can be changed in the <i>settings</i> to a minimum of 4x4 as shown below:</p>
+        <br />
+        <div class="board" style="max-width: 50%; grid-template-columns: repeat(4, 1fr);"><div class="column" data-col="0"><div class="cell" data-row="0" data-col="0"></div><div class="cell" data-row="1" data-col="0"></div><div class="cell" data-row="2" data-col="0"></div><div class="cell" data-row="3" data-col="0"></div></div><div class="column" data-col="1"><div class="cell" data-row="0" data-col="1"></div><div class="cell" data-row="1" data-col="1"></div><div class="cell" data-row="2" data-col="1"></div><div class="cell" data-row="3" data-col="1"></div></div><div class="column" data-col="2"><div class="cell" data-row="0" data-col="2"></div><div class="cell" data-row="1" data-col="2"></div><div class="cell" data-row="2" data-col="2"></div><div class="cell" data-row="3" data-col="2"></div></div><div class="column" data-col="3"><div class="cell" data-row="0" data-col="3"></div><div class="cell" data-row="1" data-col="3"></div><div class="cell" data-row="2" data-col="3"></div><div class="cell" data-row="3" data-col="3"></div></div></div>
+      </div>
+      <div class="card">
+        <h2>The Controls</h2>
+        <button class="btn btn-red">Restart</button>
+        <button class="btn btn-primary">Undo</button>
+        <button class="btn btn-secondary">Home</button>
+        <h3>Restart</h3>
+        <p>This button simply resets the board to its original state without changing any of the stats</p>
+        <h3>Undo</h3>
+        <p>This button undoes the last move</p>
+        <p><strong>Note</strong> this button can undo a win/draw</p>
+        <h3>Home</h3>
+        <p>This button brings you back to the settings page</p>
+        <p><strong>Note</strong> this button forfeits the current game</p>
+      </div>
+      <div class="card">
+        <h3>Winning the game</h3>
+        <div class="board" style="max-width: 50%; grid-template-columns: repeat(4, 1fr);" id="board"><div class="column" data-col="0"><div class="cell" data-row="0" data-col="0"></div><div class="cell" data-row="1" data-col="0"></div><div data-row="2" data-col="0" class="cell player2"></div><div data-row="3" data-col="0" class="cell player1"></div></div><div class="column" data-col="1"><div data-row="0" data-col="1" class="cell player1 winning-cell"></div><div data-row="1" data-col="1" class="cell player1 winning-cell"></div><div data-row="2" data-col="1" class="cell player1 winning-cell"></div><div data-row="3" data-col="1" class="cell player1 winning-cell"></div></div><div class="column" data-col="2"><div class="cell" data-row="0" data-col="2"></div><div data-row="1" data-col="2" class="cell player2"></div><div data-row="2" data-col="2" class="cell player2"></div><div data-row="3" data-col="2" class="cell player2"></div></div><div class="column" data-col="3"><div class="cell" data-row="0" data-col="3"></div><div class="cell" data-row="1" data-col="3"></div><div class="cell" data-row="2" data-col="3"></div><div class="cell" data-row="3" data-col="3"></div></div></div>
+        <p>Once you win the game the winning cells will be highlighted as shown above</p>
+        <br />
+        <p>The <i>stats</i> and <i>current player</i> cards will be updated and the <i>Restart</i> button will be highlighted as shown below</p>
+        <br />
+        <button class="btn btn-red highlight">Restart</button>
+        <br />
+        <br />
+        <p>In the event of a draw all relevant cards will be updated and the user can then reset the game as well</p>
+      </div>
+    </div>
+    <template id="game-template">
+      <div class="board" style="max-width: 50%" id="board"></div>
+    </template>
+  </body>
+</html>
