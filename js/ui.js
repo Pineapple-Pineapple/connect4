@@ -153,6 +153,12 @@ export class UIManager {
     }
   }
 
+  enableBoard() {
+    for (const col of this.elements.board.children) {
+      col.classList.remove('disabled')
+    }
+  }
+
   updateCell(row, col, player) {
     const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
     cell.classList.remove(`player${player}-hover`);
@@ -175,6 +181,11 @@ export class UIManager {
       cell.classList.remove('player1-hover', 'player2-hover');
       cell.parentElement.classList.remove('column-hover');
     });
+  }
+
+  clearCell(row, col) {
+    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    cell.classList = ['cell'];
   }
 
   clearAllHoverStates() {

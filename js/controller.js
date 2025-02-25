@@ -40,6 +40,20 @@ export class GameController {
     }
   }
 
+  undoMove() {
+    const move = this.connect4.undoMove();
+    if (move === -1) return;
+    if (move.type === 'win') {
+      for (const winCell of move.winningCells) {
+        const cell = document.querySelector(`[data-row="${winCell[0]}"][data-col="${winCell[1]}"]`);
+        cell.classList.remove('winning-cell');
+      }
+    }
+    this.uiManager.clearCell(move.row, move.column);
+    this.uiManager.enableBoard();
+    this.updateCurrentPlayer();
+  }
+
   handlePointerEnter(col) {
     if (this.connect4.isGameOver || this.connect4.isColumnFull(col)) return
     this.uiManager.hoveredColumn = col;

@@ -45,6 +45,10 @@ class GameApp {
       this.gameController.resetGame();
     })
 
+    document.getElementById('undo').addEventListener('click', (e) => {
+      this.gameController.undoMove();
+    })
+
     document.getElementById('settings').addEventListener('click', (e) => {
       this.uiManager.showSettingsScreen();
     })

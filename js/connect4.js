@@ -30,9 +30,10 @@ export class Connect4 {
 
     const player = this.getCurrentPlayer();
     this.board[row][column] = player;
-    this.moves.push(column);
 
     const result = { row, column, player, type: "move" }
+    this.moves.push(result);
+
     if (this.checkWin(row, column)) {
       this.isGameOver = true;
       this.winner = player;
@@ -44,6 +45,26 @@ export class Connect4 {
     }
 
     return result;
+  }
+
+  getLastMove() {
+    if (this.moves.length === 0) return -1;
+
+    return {
+      ...this.moves[this.moves.length - 1],
+      winningCells: this.winningCells
+    };
+  }
+
+  undoMove() {
+    const lastMove = this.getLastMove();
+    if (lastMove === -1) return lastMove;
+    this.board[lastMove.row][lastMove.column] = 0;
+    this.moves.pop();
+    this.isGameOver = false;
+    this.isDraw = false;
+    this.winningCells = [];
+    return lastMove;
   }
 
   isValidMove(column) {
