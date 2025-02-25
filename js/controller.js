@@ -47,6 +47,7 @@ export class GameController {
     this.connect4 = new Connect4(rows, cols);
     this.resetGame();
     this.uiManager.showGameScreen();
+    this.uiManager.updateSettingsForm();
     this.updateCurrentPlayer();
   }
 
