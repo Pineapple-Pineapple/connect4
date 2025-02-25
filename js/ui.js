@@ -124,17 +124,6 @@ export class UIManager {
   }
 
   /**
-   * Toggles between game screen and settings screen
-   */
-  toggleUI() {
-    if (this.elements.gameContainer.style.display === 'block') {
-      this.showSettingsScreen();
-    } else {
-      this.showGameScreen();
-    }
-  }
-
-  /**
    * Shows the game screen and hides the settings screen
    */
   showGameScreen() {

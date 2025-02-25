@@ -105,16 +105,13 @@ class GameApp {
     
     document.getElementById('settings').addEventListener('click', (e) => {
       this.uiManager.showSettingsScreen();
+      this.currentScreen = "settings";
     })
     
     document.addEventListener('keydown', (e) => {
       const key = e.key;
       const maxCols = this.gameController.connect4.cols;
-      if (key === 'Escape') {
-        this.uiManager.toggleUI();
-        this.currentScreen = this.currentScreen === "settings" ? "game" : "settings"
-      }
-      else if (Number.isInteger(parseInt(key)) && parseInt(key) <= maxCols && this.currentScreen === "game") {
+      if (Number.isInteger(parseInt(key)) && parseInt(key) <= maxCols && this.currentScreen === "game") {
         this.gameController.handleMove(parseInt(key) - 1, true);
       }
     })
