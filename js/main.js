@@ -23,7 +23,7 @@ class GameApp {
       e.preventDefault();
       const player1 = document.querySelector('.form-group > .name-1').value
       const player2 = document.querySelector('.form-group > .name-2').value
-      this.settingsManager.saveSettings({
+      this.settingsManager.save({
         player1: { name: player1 },
         player2: { name: player2 }
       });
@@ -41,7 +41,7 @@ class GameApp {
 
     document.getElementById('save-1').addEventListener('click', (e) => {
       const player1 = document.querySelector('.form-group > .name-1').value
-      this.settingsManager.saveSettings({ player1: { name: player1 }})
+      this.settingsManager.save({ player1: { name: player1 }})
       this.uiManager.updateSettingsForm();
       this.uiManager.updateStats();
       e.target.textContent = "Saved!"
@@ -52,7 +52,7 @@ class GameApp {
 
     document.getElementById('save-2').addEventListener('click', () => {
       const player2 = document.querySelector('.form-group > .name-2').value
-      this.settingsManager.saveSettings({ player2: { name: player2 }})
+      this.settingsManager.save({ player2: { name: player2 }})
       this.uiManager.updateSettingsForm();
       this.uiManager.updateStats();
       e.target.textContent = "Saved!"

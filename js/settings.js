@@ -15,7 +15,7 @@ export class SettingsManager {
     return saved ? JSON.parse(saved) : { ...this.DEFAULT_SETTINGS };
   }
 
-  saveSettings(updates) {
+  save(updates) {
     const newSettings = { ...this.settings };
 
     for (const [key, value] of Object.entries(updates)) {
@@ -31,7 +31,7 @@ export class SettingsManager {
   }
 
   resetStats() {
-    this.saveSettings({
+    this.save({
       player1: { wins: 0 },
       player2: { wins: 0 },
       draws: 0
@@ -60,6 +60,6 @@ export class SettingsManager {
       updates.draws = this.settings.draws + 1;
     }
 
-    this.saveSettings(updates);
+    this.save(updates);
   }
 }

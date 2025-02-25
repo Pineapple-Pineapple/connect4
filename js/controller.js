@@ -48,7 +48,19 @@ export class GameController {
         const cell = document.querySelector(`[data-row="${winCell[0]}"][data-col="${winCell[1]}"]`);
         cell.classList.remove('winning-cell');
       }
+      this.settingsManager.save({
+        [`player${move.player}`]: {
+          wins: this.settingsManager.getPlayerSettings(move.player).wins - 1
+        }
+      })
+    } else if (move.type === 'draw') {
+      this.settingsManager.save({
+        draws: this.settingsManager.settings.draws - 1
+      })
     }
+
+    document.getElementById("restart-game").classList.remove('highlight');
+    this.uiManager.updateStats();
     this.uiManager.clearCell(move.row, move.column);
     this.uiManager.enableBoard();
     this.updateCurrentPlayer();
