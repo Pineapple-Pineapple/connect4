@@ -51,12 +51,17 @@ body {
   transition: background-color 0.2s;
 }
 
+.btn[disabled] {
+ opacity: 0.5; 
+ cursor: not-allowed;
+}
+
 .btn-primary {
   background-color: var(--blue);
   color: var(--bg_h);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:enabled {
   background-color: var(--aqua);
 }
 
@@ -65,7 +70,7 @@ body {
   color: var(--fg2);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:enabled {
   background-color: var(--bg3);
 }
 

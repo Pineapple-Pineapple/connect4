@@ -7,11 +7,13 @@ class GameApp {
     this.settingsManager = new SettingsManager();
     this.uiManager = new UIManager(this.settingsManager);
     this.gameController = new GameController(this.settingsManager, this.uiManager);
+    this.validName = [false, false];
     this.initialize();
   }
 
   initialize() {
     this.setupEventListeners();
+    this.validate();
     this.uiManager.showSettingsScreen();
   }
 
@@ -25,6 +27,14 @@ class GameApp {
         player2: { name: player2 }
       });
       this.gameController.startNewgame();
+    })
+
+    document.getElementById("form-name-1").addEventListener('input', (e) => {
+      this.validate();
+    })
+
+    document.getElementById("form-name-2").addEventListener('input', (e) => {
+      this.validate();
     })
 
     document.getElementById('save-1').addEventListener('click', (e) => {
@@ -56,6 +66,36 @@ class GameApp {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.uiManager.toggleUI();
     })
+  }
+  
+  validate() {
+    const name1 = document.getElementById("form-name-1");
+    const save1 = document.getElementById("save-1");
+    const name2 = document.getElementById("form-name-2");
+    const save2 = document.getElementById("save-2");
+    const start = document.getElementById("start-game");
+
+    if (name1.value.length !== 0) {
+      this.validName[0] = true;
+      save1.disabled = false;
+    } else {
+      this.validName[0] = false;
+      save1.disabled = true;
+    }
+
+    if (name2.value.length !== 0) {
+      this.validName[1] = true;
+      save2.disabled = false;
+    } else {
+      this.validName[1] = false;
+      save2.disabled = true;
+    }
+
+    if (this.validName[0] === true && this.validName[1] === true) {
+      start.disabled = false;
+    } else {
+      start.disabled = true;
+    }
   }
 }
 
