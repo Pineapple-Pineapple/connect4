@@ -317,6 +317,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
 }
+
 .player-color {
   display: inline-block;
   width: 1rem;
@@ -326,9 +327,14 @@ body {
 }
 
 @media (max-width: 1024px) {
-  .scores,
   .game-sidebar {
-    flex-direction: row;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .game-stat-item {
+    display: flex;
+    gap: 0.5rem;
   }
 
   .scores {

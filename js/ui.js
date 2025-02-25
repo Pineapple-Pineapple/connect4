@@ -93,10 +93,12 @@ export class UIManager {
 
     for (const el of this.elements.info.player1Name) {
       el.textContent = player1.name;
+      if (el.type === "text") el.value = player1.name;
     }
 
     for (const el of this.elements.info.player2Name) {
       el.textContent = player2.name;
+      if (el.type === "text") el.value = player2.name;
     }
 
     for (const el of this.elements.stats.draws) {

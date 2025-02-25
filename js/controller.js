@@ -24,7 +24,7 @@ export class GameController {
     this.updateCurrentPlayer();
   }
 
-  handleMove(column) {
+  handleMove(column, mobile = false) {
     if (this.connect4.isGameOver) return;
 
     const result = this.connect4.makeMove(column);
@@ -36,7 +36,7 @@ export class GameController {
       this.handleGameEnd(result);
     } else {
       this.updateCurrentPlayer();
-      this.uiManager.updateColumn(result.column, this.connect4.getLowestEmptyRow(result.column), this.connect4.getCurrentPlayer());
+      if (!mobile) this.uiManager.updateColumn(result.column, this.connect4.getLowestEmptyRow(result.column), this.connect4.getCurrentPlayer());
     }
   }
 
@@ -48,7 +48,7 @@ export class GameController {
     this.uiManager.updateColumn(col, lowest, player)
   }
 
-  handlePointerLeave(col) {
+  handlePointerLeave() {
     this.uiManager.clearAllHoverStates();
   }
 
@@ -71,7 +71,7 @@ export class GameController {
     const col = element?.closest('.column')?.dataset.col;
     
     this.uiManager.clearAllHoverStates();
-    col !== undefined && this.handleMove(parseInt(col));
+    col !== undefined && this.handleMove(parseInt(col), true);
   }
 
   handleGameEnd(result) {
