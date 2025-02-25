@@ -92,8 +92,9 @@ body {
 
 .settings-header {
   text-align: center;
-  margin-bottom: 2rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--bg2);
+  margin-bottom: 1rem;
 }
 
 .settings-header h1 {

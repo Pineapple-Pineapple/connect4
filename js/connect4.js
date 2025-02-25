@@ -50,6 +50,10 @@ export class Connect4 {
     return column >= 0 && column < this.cols && this.board[0][column] === 0;
   }
 
+  isColumnFull(column) {
+    return this.board[0][column] !== 0;
+  }
+
   getLowestEmptyRow(column) {
     for (let row = this.rows - 1; row >= 0; row--) {
       if (this.board[row][column] === 0) return row;

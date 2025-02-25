@@ -41,7 +41,7 @@ export class GameController {
   }
 
   handlePointerEnter(col) {
-    if (this.connect4.isGameOver) return
+    if (this.connect4.isGameOver || this.connect4.isColumnFull(col)) return
     this.uiManager.hoveredColumn = col;
     const lowest = this.connect4.getLowestEmptyRow(col);
     const player = this.connect4.getCurrentPlayer();
@@ -83,6 +83,9 @@ export class GameController {
       this.highlightWinningCells();
       const player = this.settingsManager.getPlayerSettings(result.player).name
       this.uiManager.elements.currentPlayer.textContent = `Winner: ${player}`;
+    } else if (result.type === 'draw') {
+      this.uiManager.elements.currentPlayer.textContent = "It's a draw!";
+      this.uiManager.elements.playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
     }
   }
 
