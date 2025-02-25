@@ -30,6 +30,7 @@ class GameApp {
     document.getElementById('save-1').addEventListener('click', (e) => {
       const player1 = document.querySelector('.form-group > #name-1').value
       this.settingsManager.saveSettings({ player1: { name: player1 }})
+      this.uiManager.updateSettingsForm();
       this.uiManager.updateStats();
     })
 
