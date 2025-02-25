@@ -2,63 +2,7 @@ export class Connect4 {
   constructor(rows = 6, cols = 7) {
     this.rows = rows;
     this.cols = cols;
-    this.board = Array(rows).fill().map(() => Array(cols).fill(0));
-    this.moves = [];
-    this.winningCells = [];
-    this.isGameOver = false;
-    this.isDraw = false;
-    this.winner = null;
-  }
-
-  getBoard() {
-    return this.board;
-  }
-
-  getIsGameOver() {
-    return this.isGameOver;
-  }
-
-  getIsDraw() {
-    return this.isDraw;
-  }
-
-  getWinner() {
-    return this.winner;
-  }
-
-  getWinningCells() {
-    return this.winningCells;
-  }
-
-  getCurrentPlayer() {
-    return this.moves.length % 2 + 1;
-  }
-
-  makeMove(column) {
-    if (this.isGameOver || !this.isValidMove(this.board, column)) {
-      return null;
-    }
-
-    const row = this.getLowestEmptyRow(this.board, column);
-    if (row === -1) return null;
-
-    const currentPlayer = this.getCurrentPlayer();
-    this.board[row][column] = currentPlayer;
-    this.moves.push(column);
-
-    if (this.isWinningMove(this.board, row, column)) {
-      this.isGameOver = true;
-      this.winner = currentPlayer;
-      return { row, column, type: 'win', player: currentPlayer };
-    }
-
-    if (this.moves.length === this.rows * this.cols) {
-      this.isGameOver = true;
-      this.isDraw = true;
-      return { row, column, type: 'draw', player: currentPlayer };
-    }
-
-    return { row, column, type: 'ongoing', player: currentPlayer };
+    this.reset();
   }
 
   reset() {
@@ -70,117 +14,107 @@ export class Connect4 {
     this.winner = null;
   }
 
-  undo(moves = 1) {
-    if (this.isGameOver) {
-      this.isGameOver = false;
-      this.isDraw = false;
-      this.winner = null;
-      this.winningCells = [];
+  getBoard() {
+    return this.board;
+  }
+
+  getCurrentPlayer() {
+    return this.moves.length % 2 + 1;
+  }
+
+  makeMove(column) {
+    if (this.isGameOver || !this.isValidMove(column)) return null;
+
+    const row = this.getLowestEmptyRow(column);
+    if (row === -1) return null;
+
+    const player = this.getCurrentPlayer();
+    this.board[row][column] = player;
+    this.moves.push(column);
+
+    const result = { row, column, player, type: "move" }
+    if (this.checkWin(row, column)) {
+      this.isGameOver = true;
+      this.winner = player;
+      result.type = 'win';
+    } else if (this.moves.length === this.rows * this.cols) {
+      this.isGameOver = true;
+      this.isDraw = true;
+      result.type = 'draw';
     }
 
-    for (let i = 0; i < moves; i++) {
-      const column = this.moves.pop();
-      const row = this.getLowestEmptyRow(this.board, column);
-      this.board[row][column] = 0;
-    }
+    return result;
   }
 
-  isValidMove(board, column) {
-    return column >= 0 && column < this.cols && board[0][column] === 0;
+  isValidMove(column) {
+    return column >= 0 && column < this.cols && this.board[0][column] === 0;
   }
 
-  isValidCell(row, column) {
-    return row >= 0 && row < this.rows && column >= 0 && column < this.cols
-  }
-
-  getLowestEmptyRow(board, column) {
+  getLowestEmptyRow(column) {
     for (let row = this.rows - 1; row >= 0; row--) {
-      if (board[row][column] === 0) {
-        return row;
-      }
+      if (this.board[row][column] === 0) return row;
     }
     return -1;
   }
 
-  isWinningMove(board, row, column) {
-    return (
-      this.checkDirection(board, row, column, 0, 1) ||  // Horizontal
-      this.checkDirection(board, row, column, 1, 0) ||  // Vertical
-      this.checkDirection(board, row, column, 1, 1) ||  // Diagonal down-right
-      this.checkDirection(board, row, column, 1, -1)     // Diagonal down-left
+  checkWin(row, col) {
+    const directions = [
+      [0, 1], [1, 0], [1, 1], [1, -1]
+    ];
+
+    return directions.some(([dr, dc]) => 
+      this.checkDirection(row, col, dr, dc)
     );
   }
 
-  checkDirection(board, row, column, deltaRow, deltaCol) {
-    const player = board[row][column];
-    const winningCells = [[row, column]];
+  checkDirection(row, col, dr, dc) {
+    const player = this.board[row][col];
+    let count = 1;
 
-    let [r, c] = [row + deltaRow, column + deltaCol];
-    while (this.isValidCell(r, c) && board[r][c] === player) {
-      winningCells.push([r, c]);
-      r += deltaRow;
-      c += deltaCol;
+    let r = row + dr, c = col + dc;
+    while (this.isValidCell(r, c) && this.board[r][c] === player) {
+      count ++;
+      r += dr;
+      c += dc;
     }
 
-    [r, c] = [row - deltaRow, column - deltaCol];
-    while (this.isValidCell(r, c) && board[r][c] === player) {
-      winningCells.unshift([r, c]);
-      r -= deltaRow;
-      c -= deltaCol;
+    r = row - dr;
+    c = col - dc;
+    while (this.isValidCell(r, c) && this.board[r][c] === player) {
+      count ++;
+      r -= dr;
+      c -= dc;
     }
 
-    if (winningCells.length >= 4) {
-      this.winningCells = winningCells;
-      return true;
+    if (count >= 4) {
+      this.winningCells = this.getWinningCells(row, col, dr, dc);
+      return true
     }
+
     return false;
   }
 
-  static fromString(str) {
-    const [rows, cols, movesStr] = str.split(';');
-    const connect4 = new Connect4(parseInt(rows), parseInt(cols));
-    const moves = movesStr.split(',').map(move => parseInt(move));
-    moves.forEach(move => connect4.makeMove(move));
-    return connect4;
+  isValidCell(row, col) {
+    return row >= 0 && row < this.rows && col >= 0 && col < this.cols;
   }
 
-  toString() {
-    return `${this.rows};${this.cols};${this.moves.join(',')}`;
-  }
+  getWinningCells(row, col, dr, dc) {
+    const cells = [[row, col]];
+    let r = row + dr, c = col + dc;
+    while (this.isValidCell(r, c) && this.board[r][c] === this.board[row][col]) {
+      cells.push([r, c]);
+      r += dr;
+      c += dc;
+    }
 
-  static fromJSON(json) {
-    const { rows, cols, board, moves, isGameOver, isDraw, winner } = JSON.parse(json);
-    const connect4 = new Connect4(rows, cols);
-    connect4.board = board;
-    connect4.moves = moves;
-    connect4.isGameOver = isGameOver;
-    connect4.isDraw = isDraw;
-    connect4.winner = winner;
-    return connect4;
-  }
+    r = row - dr;
+    c = col - dc;
+    while (this.isValidCell(r, c) && this.board[r][c] === this.board[row][col]) {
+      cells.push([r, c]);
+      r -= dr;
+      c -= dc;
+    }
 
-  toJSON() {
-    return JSON.stringify({
-      rows: this.rows,
-      cols: this.cols,
-      board: this.board,
-      moves: this.moves,
-      isGameOver: this.isGameOver,
-      isDraw: this.isDraw,
-      winner: this.winner
-    });
-  }
-
-  static fromLocalStorage(key) {
-    return Connect4.fromJSON(localStorage.getItem(key));
-  }
-
-  saveToLocalStorage(key) {
-    localStorage.setItem(key, this.toJSON());
-    return this;
-  }
-
-  static clearLocalStorage(key) {
-    localStorage.removeItem(key);
+    return cells;
   }
 }

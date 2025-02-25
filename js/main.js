@@ -1,179 +1,60 @@
-import { Connect4 } from './connect4.js';
-import { SettingsManager } from './settings.js';
-import { GameStateManager } from './gameState.js';
-import { UIManager } from './ui.js';
+import { SettingsManager } from "./settings.js";
+import { UIManager } from "./ui.js";
+import { GameController } from "./controller.js";
 
-class GameManager {
-  static DEFAULT_CONFIG = {
-    containerIds: {
-      game: 'game-container',
-      settings: 'settings-container'
-    },
-    buttonIds: {
-      savePlayer1: 'save-1',
-      savePlayer2: 'save-2',
-      resetStats: 'reset-stats'
-    }
-  };
-
-  constructor(config = {}) {
-    this.config = { ...GameManager.DEFAULT_CONFIG, ...config };
+class GameApp {
+  constructor() {
+    this.settingsManager = new SettingsManager();
+    this.uiManager = new UIManager(this.settingsManager);
+    this.gameController = new GameController(this.settingsManager, this.uiManager);
     this.initialize();
   }
 
   initialize() {
-    try {
-      this.initializeComponents();
-      this.initializeDOMElements();
-      this.initializeEventListeners();
-      this.showSettings();
-    } catch (error) {
-      console.error('Failed to initialize game:', error);
-      this.handleInitializationError(error);
-    }
+    this.setupEventListeners();
+    this.uiManager.showSettingsScreen();
   }
 
-  initializeComponents() {
-    this.connect4 = new Connect4();
-    this.gameStateManager = new GameStateManager(this);
-    this.settingsManager = new SettingsManager(this);
-    this.uiManager = new UIManager(this);
-  }
+  setupEventListeners() {
+    document.getElementById('start-game').addEventListener('click', (e) => {
+      e.preventDefault();
+      const player1 = document.querySelector('.form-group > #name-1').value
+      const player2 = document.querySelector('.form-group > #name-2').value
+      this.settingsManager.saveSettings({
+        player1: { name: player1 },
+        player2: { name: player2 }
+      });
+      this.gameController.startNewgame();
+    })
 
-  initializeDOMElements() {
-    const { containerIds } = this.config;
-
-    this.gameContainer = document.getElementById(containerIds.game);
-    this.settingsContainer = document.getElementById(containerIds.settings);
-
-    if (!this.gameContainer || !this.settingsContainer) {
-      throw new Error('Required game containers not found');
-    }
-
-    this.settingsForm = this.settingsContainer.querySelector('form');
-    if (!this.settingsForm) {
-      throw new Error('Settings form not found');
-    }
-  }
-
-  initializeEventListeners() {
-    const { buttonIds } = this.config;
-
-    this.boundHandleEscape = this.handleEscape.bind(this);
-    this.boundHandleSettingsSubmit = this.handleSettingsSubmit.bind(this);
-
-    this.settingsForm.addEventListener('submit', this.boundHandleSettingsSubmit);
-
-    this.addButtonListener(buttonIds.savePlayer1, () =>
-      this.settingsManager.savePlayerSettings(1));
-    this.addButtonListener(buttonIds.savePlayer2, () =>
-      this.settingsManager.savePlayerSettings(2));
-    this.addButtonListener(buttonIds.resetStats, () => {
-      this.gameStateManager.resetStats();
+    document.getElementById('save-1').addEventListener('click', (e) => {
+      const player1 = document.querySelector('.form-group > #name-1').value
+      this.settingsManager.saveSettings({ player1: { name: player1 }})
       this.uiManager.updateStats();
-    });
+    })
 
-    document.addEventListener('keydown', this.boundHandleEscape);
-  }
+    document.getElementById('save-2').addEventListener('click', () => {
+      const player2 = document.querySelector('.form-group > #name-2').value
+      this.settingsManager.saveSettings({ player2: { name: player2 }})
+      this.uiManager.updateSettingsForm();
+      this.uiManager.updateStats();
+    })
 
-  addButtonListener(id, handler) {
-    const button = document.getElementById(id);
-    if (button) {
-      button.addEventListener('click', handler);
-    } else {
-      console.warn(`Button with id '${id}' not found`);
-    }
-  }
+    document.getElementById('restart-game').addEventListener('click', (e) => {
+      this.gameController.resetGame();
+    })
 
-  handleSettingsSubmit(e) {
-    e.preventDefault();
-    try {
-      this.settingsManager.savePlayerSettings(1);
-      this.settingsManager.savePlayerSettings(2);
-      this.settingsManager.saveBoardSettings();
-      this.handleNewGame();
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      this.uiManager.showError('Failed to save settings');
-    }
-  }
+    document.getElementById('settings').addEventListener('click', (e) => {
+      this.uiManager.showSettingsScreen();
+    })
 
-  handleEscape(e) {
-    if (e.key === 'Escape') {
-      this.toggleSettings();
-    }
-  }
-
-  handleNewGame() {
-    try {
-      const { rows, cols } = this.settingsManager.getBoardSettings();
-      this.connect4 = new Connect4(rows, cols);
-      this.gameStateManager.resetGame();
-      this.uiManager.initializeBoard();
-      this.hideSettings();
-      this.showGame();
-    } catch (error) {
-      console.error('Failed to start new game:', error);
-      this.uiManager.showError('Failed to start new game');
-    }
-  }
-
-  handleInitializationError(error) {
-    const errorElement = document.createElement('div');
-    errorElement.className = 'error-message';
-    errorElement.textContent = 'Failed to initialize game. Please refresh the page.';
-    document.body.appendChild(errorElement);
-  }
-
-  destroy() {
-    document.removeEventListener('keydown', this.boundHandleEscape);
-    this.settingsForm.removeEventListener('submit', this.boundHandleSettingsSubmit);
-  }
-
-  showSettings() {
-    this.validateContainer(this.settingsContainer);
-    this.settingsContainer.style.display = 'block';
-  }
-
-  hideSettings() {
-    this.validateContainer(this.settingsContainer);
-    this.settingsContainer.style.display = 'none';
-  }
-
-  showGame() {
-    this.validateContainer(this.gameContainer);
-    this.gameContainer.style.display = 'block';
-  }
-
-  hideGame() {
-    this.validateContainer(this.gameContainer);
-    this.gameContainer.style.display = 'none';
-  }
-
-  validateContainer(container) {
-    if (!container || !(container instanceof HTMLElement)) {
-      throw new Error('Invalid container element');
-    }
-  }
-
-  toggleSettings() {
-    try {
-      if (this.settingsContainer.style.display === 'none') {
-        this.showSettings();
-        this.hideGame();
-      } else {
-        this.hideSettings();
-        this.showGame();
-      }
-    } catch (error) {
-      console.error('Failed to toggle settings:', error);
-    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.uiManager.toggleUI();
+    })
   }
 }
 
-const gameManager = new GameManager();
-export default gameManager;
-
-if (typeof window !== 'undefined') {
-  window.gameManager = gameManager;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const gameApp = new GameApp();
+  window.gameApp = gameApp;
+})
