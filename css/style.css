@@ -79,6 +79,11 @@ body {
   color: var(--fg);
 }
 
+.highlight {
+  border: 4px solid lightgreen;
+  background-color: var(--green);
+}
+
 .btn-red:hover {
   background-color: var(--orange);
 }

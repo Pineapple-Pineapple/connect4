@@ -8,6 +8,7 @@ class GameApp {
     this.uiManager = new UIManager(this.settingsManager);
     this.gameController = new GameController(this.settingsManager, this.uiManager);
     this.validName = [false, false];
+    this.currentScreen = "settings";
     this.initialize();
   }
 
@@ -27,6 +28,7 @@ class GameApp {
         player2: { name: player2 }
       });
       this.gameController.startNewgame();
+      this.currentScreen = "game";
     })
 
     document.getElementById("form-name-1").addEventListener('input', (e) => {
@@ -72,7 +74,15 @@ class GameApp {
     })
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') this.uiManager.toggleUI();
+      const key = e.key;
+      const maxCols = this.gameController.connect4.cols;
+      if (key === 'Escape') {
+        this.uiManager.toggleUI();
+        this.currentScreen = this.currentScreen === "settings" ? "game" : "settings"
+      }
+      else if (Number.isInteger(parseInt(key)) && parseInt(key) <= maxCols && this.currentScreen === "game") {
+        this.gameController.handleMove(parseInt(key) - 1, true);
+      }
     })
   }
   

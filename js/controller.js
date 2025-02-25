@@ -19,12 +19,12 @@ export class GameController {
   startNewgame() {
     const { rows, cols } = this.settingsManager.getBoardSettings();
     this.connect4  = new Connect4(rows, cols);
-    this.uiManager.resetBoard();
+    this.resetGame();
     this.uiManager.showGameScreen();
     this.updateCurrentPlayer();
   }
 
-  handleMove(column, mobile = false) {
+  handleMove(column, updateColumn = false) {
     if (this.connect4.isGameOver) return;
 
     const result = this.connect4.makeMove(column);
@@ -36,7 +36,7 @@ export class GameController {
       this.handleGameEnd(result);
     } else {
       this.updateCurrentPlayer();
-      if (!mobile) this.uiManager.updateColumn(result.column, this.connect4.getLowestEmptyRow(result.column), this.connect4.getCurrentPlayer());
+      if (!updateColumn) this.uiManager.updateColumn(result.column, this.connect4.getLowestEmptyRow(result.column), this.connect4.getCurrentPlayer());
     }
   }
 
@@ -92,6 +92,7 @@ export class GameController {
     this.settingsManager.updateStats(result);
     this.uiManager.updateStats();
     this.uiManager.disableBoard();
+    document.getElementById("restart-game").classList.add('highlight');
 
     if (result.type === 'win') {
       this.highlightWinningCells();
@@ -120,6 +121,7 @@ export class GameController {
   resetGame() {
     this.connect4.reset();
     this.uiManager.resetBoard();
+    document.getElementById("restart-game").classList.remove('highlight');
     this.updateCurrentPlayer();
     this.uiManager.updateStats();
   }
