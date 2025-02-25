@@ -42,6 +42,10 @@ class GameApp {
       this.settingsManager.saveSettings({ player1: { name: player1 }})
       this.uiManager.updateSettingsForm();
       this.uiManager.updateStats();
+      e.target.textContent = "Saved!"
+      setTimeout(() => {
+        e.target.textContent = "Save";
+      }, 1000)
     })
 
     document.getElementById('save-2').addEventListener('click', () => {
@@ -49,6 +53,10 @@ class GameApp {
       this.settingsManager.saveSettings({ player2: { name: player2 }})
       this.uiManager.updateSettingsForm();
       this.uiManager.updateStats();
+      e.target.textContent = "Saved!"
+      setTimeout(() => {
+        e.target.textContent = "Save";
+      }, 1000)
     })
 
     document.getElementById('restart-game').addEventListener('click', (e) => {
