@@ -1,13 +1,36 @@
+/**
+ * @fileoverview Game controller that coordinates between the Connect4 game logic,
+ * the settings manager, and the UI manager. Handles game flow, user interactions,
+ * and updates the UI based on game state.
+ */
+
 import { Connect4 } from "./connect4.js";
 
+/**
+ * Controller class that manages game flow and coordinates between game logic and UI
+ */
 export class GameController {
+  /**
+   * Creates a new game controller
+   * @param {import('./settings.js').SettingsManager} settingsManager - The settings manager instance
+   * @param {import('./ui.js').UIManager} uiManager - The UI manager instance
+   */
   constructor(settingsManager, uiManager) {
+    /** @type {import('./settings.js').SettingsManager} Settings manager instance */
     this.settingsManager = settingsManager;
+    
+    /** @type {import('./ui.js').UIManager} UI manager instance */
     this.uiManager = uiManager;
+    
+    /** @type {Connect4} Connect4 game logic instance */
     this.connect4 = new Connect4();
+    
     this.setupUIHandlers();
   }
 
+  /**
+   * Sets up event handlers for user interactions with the UI
+   */
   setupUIHandlers() {
     this.uiManager.onColumnClick = this.handleMove.bind(this);
     this.uiManager.handlePointerEnter = this.handlePointerEnter.bind(this);
@@ -16,14 +39,22 @@ export class GameController {
     this.uiManager.handleTouchEnd = this.handleTouchEnd.bind(this);
   }
 
+  /**
+   * Starts a new game with current settings
+   */
   startNewgame() {
     const { rows, cols } = this.settingsManager.getBoardSettings();
-    this.connect4  = new Connect4(rows, cols);
+    this.connect4 = new Connect4(rows, cols);
     this.resetGame();
     this.uiManager.showGameScreen();
     this.updateCurrentPlayer();
   }
 
+  /**
+   * Handles a player making a move in a specific column
+   * @param {number} column - The column index where the move is made
+   * @param {boolean} [updateColumn=false] - Whether to update the column hover effect
+   */
   handleMove(column, updateColumn = false) {
     if (this.connect4.isGameOver) return;
 
@@ -40,6 +71,9 @@ export class GameController {
     }
   }
 
+  /**
+   * Undoes the last move and updates the UI accordingly
+   */
   undoMove() {
     const move = this.connect4.undoMove();
     if (move === -1) return;
@@ -66,6 +100,10 @@ export class GameController {
     this.updateCurrentPlayer();
   }
 
+  /**
+   * Handles pointer entering a column for hover effects
+   * @param {number} col - The column index being hovered
+   */
   handlePointerEnter(col) {
     if (this.connect4.isGameOver || this.connect4.isColumnFull(col)) return
     this.uiManager.hoveredColumn = col;
@@ -74,10 +112,17 @@ export class GameController {
     this.uiManager.updateColumn(col, lowest, player)
   }
 
+  /**
+   * Handles pointer leaving a column to clear hover effects
+   */
   handlePointerLeave() {
     this.uiManager.clearAllHoverStates();
   }
 
+  /**
+   * Handles touch move events for mobile play
+   * @param {TouchEvent} e - The touch move event
+   */
   handleTouchMove(e) {
     e.preventDefault();
     const touch = e.touches[0];
@@ -90,6 +135,10 @@ export class GameController {
     }
   }
 
+  /**
+   * Handles touch end events for mobile play
+   * @param {TouchEvent} e - The touch end event
+   */
   handleTouchEnd(e) {
     e.preventDefault();
     const touch = e.changedTouches[0];
@@ -100,6 +149,10 @@ export class GameController {
     col !== undefined && this.handleMove(parseInt(col), true);
   }
 
+  /**
+   * Handles the end of a game (win or draw)
+   * @param {import('./connect4.js').MoveResult} result - The result of the final move
+   */
   handleGameEnd(result) {
     this.settingsManager.updateStats(result);
     this.uiManager.updateStats();
@@ -116,6 +169,9 @@ export class GameController {
     }
   }
 
+  /**
+   * Updates the UI to show the current player
+   */
   updateCurrentPlayer() {
     const currentPlayer = this.connect4.getCurrentPlayer();
     const { name, color } = this.settingsManager.getPlayerSettings(currentPlayer);
@@ -123,6 +179,9 @@ export class GameController {
     this.uiManager.elements.playerColor.style.backgroundColor = color;
   }
 
+  /**
+   * Highlights the cells that form the winning connection
+   */
   highlightWinningCells() {
     this.connect4.winningCells.forEach(([ row, col ]) => {
       const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -130,6 +189,9 @@ export class GameController {
     })
   }
 
+  /**
+   * Resets the game state and UI
+   */
   resetGame() {
     this.connect4.reset();
     this.uiManager.resetBoard();
