@@ -138,8 +138,9 @@ export class UIManager {
 
   resetBoard() {
     for (const col of this.elements.board.children) {
+      col.classList = ['column'];
       for (const cell of col.children) {
-        cell.classList = ['cell']
+        cell.classList = ['cell'];
       }
     };
   }
