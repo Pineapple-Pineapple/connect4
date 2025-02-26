@@ -18,8 +18,10 @@
  * @property {BoardSettings} board - Board settings
  * @property {number} draws - Number of draw games
  * 
+ * @typedef {'move'|'win'|'draw'} gameResultType
+ * 
  * @typedef {Object} GameResult
- * @property {string} type - Type of result ('win' or 'draw')
+ * @property {gameResultType} type - Type of result ('win' or 'draw')
  * @property {number} [player] - Player number who won (required if type is 'win')
  *
  * @typedef {Object} SettingsEventMap
@@ -91,6 +93,7 @@ export class SettingsManager {
 
   /**
    * Dispatches an event to all registered event listeners
+   * @private
    * @param {keyof SettingsEventMap} event - Event name
    * @param {any} data - Data to pass to event listeners
    */
