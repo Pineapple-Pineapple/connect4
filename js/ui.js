@@ -1,0 +1,533 @@
+/**
+ * @fileoverview Manages visual presentation ad, user interaction,
+ * game board, settings screen, and user interface
+ * 
+ * @typedef {Object} UIEventMap
+ * @property {function(number):void} columnClick - Called when a column is clicked
+ * @property {function(number):void} columnEnter - Called when a pointer enters a column
+ * @property {function(number):void} columnLeave - Called when a pointer leaves a column
+ * @property {function(TouchEvent):void} touchMove - Called when a touch moves across the board
+ * @property {function(TouchEvent):void} touchEnd - Called when a touch ends
+ * @property {function():void} resetStats - Called when the user clicks the reset stats button
+ * @property {function():void} toggleScreen - Called when the user switches screens
+ * 
+ * @typedef {import('./settings.js').SettingsManager} SettingsManager
+ */
+
+export class UIManager {
+  /**
+   * @private
+   * @type {SettingsManager}
+   */
+  #settingsManager;
+
+  /**
+   * @private
+   * @type {Object.<string, HTMLElement|Object>}
+   */
+  #elements = {};
+
+  /**
+   * @private
+   * @type {number|null}
+   */
+  #hoveredColumn = null;
+
+  /**
+   * @private
+   * @type{boolean}
+   */
+  #isTouchDevice = 'ontouchstart' in window;
+
+  /**
+   * @private
+   * @type {Object.<string, Set<Function>}
+   */
+  #eventListeners = {
+    columnClick: new Set(),
+    columnEnter: new Set(),
+    columnLeave: new Set(),
+    touchMove: new Set(),
+    touchEnd: new Set(),
+    resetStats: new Set(),
+    toggleScreen: new Set()
+  };
+
+  /**
+   * @private
+   * @type {string}
+   */
+  #currentScreen = 'settings';
+
+
+  /**
+   * @param {SettingsManager} settingsManager - The settings manager instance
+   */
+  constructor(settingsManager) {
+    this.#settingsManager = settingsManager;
+
+    this.#settingsManager.addEventListener('settingsChanged', () => {
+      this.#updateUIFromSettings();
+    })
+
+    this.#cacheElements();
+    this.#initializeUI();
+    this.#setupEventListeners();
+  }
+
+  /**
+   * Adds an event listener for UI events
+   * @param {keyof UIEventMap} event - Event name
+   * @param {Function} callback - Function to call when the event occurs
+   */
+  addEventListener(event, callback) {
+    if (this.#eventListeners[event]) {
+      this.#eventListeners[event].add(callback);
+    }
+  }
+
+  /**
+   * Removes an event listener
+   * @param {keyof UIEventMap} event - Event name
+   * @param {Function} callback - Function to remove
+   */
+  removeEventListener(event, callback) {
+    if (this.#eventListeners[event]) {
+      this.#eventListeners[event].delete(callback);
+    }
+  }
+
+  /**
+   * Dispatches an event to all registered listeners
+   * @private
+   * @param {keyof UIEventMap} event - Event name
+   * @param {any} data - Data to pass to listeners
+   */
+  #dispatchEvent(event, data) {
+    if (this.#eventListeners[event]) {
+      for (const callback of this.#eventListeners[event]) {
+        callback(data);
+      }
+    }
+  }
+
+  /**
+   * Caches DOM elements for faster access
+   * @private
+   */
+  #cacheElements() {
+    this.#elements = {
+      gameContainer: document.getElementById('game-container'),
+      settingsContainer: document.getElementById('settings-container'),
+      board: document.getElementById('board'),
+      boardTemplate: document.getElementById('game-template'),
+      currentPlayer: document.getElementById('current-player'),
+      playerColor: document.getElementById('player-color'),
+      resetStats: document.getElementById('reset-stats'),
+      settings: document.getElementById('settings'),
+      stats: {
+        player1: document.getElementsByClassName('wins-1'),
+        player2: document.getElementsByClassName('wins-2'),
+        draws: document.getElementsByClassName('draws')
+      },
+      settings: {
+        player1Name: document.getElementsByClassName('name-1'),
+        player1Color: document.getElementById('color-1'),
+        player2Name: document.getElementsByClassName('name-2'),
+        player2Color: document.getElementById('color-2'),
+        boardRows: document.getElementById('board-rows'),
+        boardCols: document.getElementById('board-cols'),
+        boardColor: document.getElementById('board-color'),
+      }
+    }
+  }
+
+  /**
+   * Setup event listeners for UI interactions
+   * @private
+   */
+  #setupEventListeners() {
+    // Board Ineraction
+    this.#elements.board.addEventListener('click', this.#handleBoardClick.bind(this));
+
+    // Board columns
+    for (const col of this.#elements.board.children) {
+      col.addEventListener('mouseenter', () => {
+        this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
+      });
+
+      col.addEventListener('mouseleave', () => {
+        this.#dispatchEvent('columnLeave', parseInt(col.dataset.col));
+      });
+
+      col.addEventListener('mousedown', (e) => {
+        if (!this.#isTouchDevice) e.preventDefault();
+      });
+
+      col.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
+      });
+
+      col.addEventListener('touchmove', (e) => {
+        this.#dispatchEvent('touchMove', e);
+      });
+
+      col.addEventListener('touchend', (e) => {
+        this.#dispatchEvent('touchEnd', e);
+      });
+    }
+
+    // Reset Stats
+    this.#elements.resetStats.addEventListener('click', () => {
+      this.#dispatchEvent('resetStats');
+    })
+
+    // Settings
+    this.#elements.settings.addEventListener('click', () => {
+      this.#dispatchEvent('toggleScreen');
+    })
+  }
+
+  /**
+   * Handles click events on the game baord
+   * @private
+   * @param {MouseEvent} e - The click event
+   */
+  #handleBoardClick(e) {
+    const column = e.target.closest('.column')?.dataset?.col;
+    if (column !== undefined) {
+      this.#dispatchEvent('columnClick', parseInt(column))
+    }
+  }
+
+  /**
+   * Initializes the UI elements from the current settings
+   * @private
+   */
+  #initializeUI() {
+    this.#setCSSVariables(); 
+    this.createBoard();
+    this.#updateUIFromSettings();
+  }
+
+  /**
+   * Updates all UI from current settings
+   * @private
+   */
+  #updateUIFromSettings() {
+    this.updateSettingsForm();
+    this.updateStats();
+    this.#setCSSVariables();
+  }
+
+  /**
+   * Updates the settings form with current settings values
+   */
+  updateSettingsForm() {
+    const { player1, player2, board } = this.#settingsManager.getAllSettings();
+
+    // Update color inputs
+    this.#elements.settings.player1Color.value = player1.color;
+    this.#elements.settings.player2Color.value = player2.color;
+    this.#elements.settings.boardColor.value = board.color;
+
+    // Update board dimension inputs
+    this.#elements.settings.boardRows.value = board.rows;
+    this.#elements.settings.boardCols.value = board.columns;
+
+    // Update player name elements
+    for (const el of this.#elements.settings.player1Name) {
+      el.textContent = player1.name;
+      if (el.tagName === 'INPUT') el.value = player1.name;
+    }
+    
+    for (const el of this.#elements.settings.player2Name) {
+      el.textContent = player2.name;
+      if (el.tagName === 'INPUT') el.value = player2.name;
+    }
+  }
+
+  /**
+   * Sets CSS variables based on current settings
+   * @private
+   */
+  #setCSSVariables() {
+    const { player1, player2, board } = this.#settingsManager.getAllSettings();
+    document.documentElement.style.setProperty('--player1-color', player1.color);
+    document.documentElement.style.setProperty('--player2-color', player2.color);
+    document.documentElement.style.setProperty('--board-color', board.color);
+  }
+
+  /**
+   * Gets the current screen being displayed
+   * @return {string} The current screen ('game' or 'settings')
+   */
+  get currentScreen() {
+    return this.#currentScreen;
+  }
+
+  /**
+   * Gets the currently hovered column
+   * @return {number|null} The hovered column, or null if none
+   */
+  get hoveredColumn() {
+    return this.#hoveredColumn;
+  }
+
+  /**
+   * Sets the currently hovered column
+   * @param {number|null} column - The column to hover, or null if none
+   */
+  set hoveredColumn(column) {
+    this.#hoveredColumn = column;
+  }
+
+  /**
+   * Toggles between game and settings screen
+   */
+  toggleScreen() {
+    if (this.#currentScreen === 'game') {
+      this.showSettingsScreen();
+    } else {
+      this.showGameScreen;
+    }
+
+    this.#dispatchEvent('toggleScreen');
+  }
+
+  /**
+   * Shows the game screen and hides the settings screen
+   */
+  showGameScreen() {
+    this.#elements.settingsContainer.style.display = 'none';
+    this.#elements.gameContainer.style.display = 'block';
+    this.#currentScreen = 'game'
+  }
+
+  /**
+   * Shows the settings screen and hides the game screen
+   */
+  showGameScreen() {
+    this.#elements.settingsContainer.style.display = 'block';
+    this.#elements.gameContainer.style.display = 'none';
+    this.#currentScreen = 'settings'
+  }
+
+  /**
+   * Creates the game board based on current settings
+   */
+  createBoard() {
+    // Insert template HTML
+    const template = this.#elements.boardTemplate.innerHTML;
+    this.#elements.gameContainer.innerHTML = template;
+    
+    // Re-cache elements as they've been recreated
+    this.#cacheElements();
+    this.#setupEventListeners();
+    
+    // Set board dimensions
+    const { rows, cols } = this.#settingsManager.getBoardSettings();
+    this.#elements.board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    this.#elements.board.innerHTML = '';
+
+    // Create columns and cells
+    for (let col = 0; col < cols; col++) {
+      const column = document.createElement('div');
+      column.classList.add('column');
+      column.dataset.col = col;
+
+      for (let row = 0; row < rows; row++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = row;
+        cell.dataset.col = col;
+        column.appendChild(cell);
+      }
+
+      this.#elements.board.appendChild(column);
+    }
+  }
+
+  /**
+   * Resets board back to initial state
+   */
+  resetBoard() {
+    for (const col of this.#elements.board.children) {
+      col.classList = ['column'];
+      for (const cell of col.children) {
+        cell.classList = ['cell'];
+      }
+    }
+  }
+
+  /**
+   * Disables user interaction with the baord
+   */
+  disableBoard() {
+    for (const col of this.#elements.board.children) {
+      col.classList.add('disabled');
+    }
+  }
+
+  /**
+   * Enables user interaction with the baord
+   */
+  enableBoard() {
+    for (const col of this.#elements.board.children) {
+      col.classList.remove('disabled');
+    }
+  }
+
+  /**
+   * Updates a cell to show a player's piece
+   * @param {number} row - Row index of the piece
+   * @param {number} col - Column index of the piece
+   * @param {number} player - Player number (1 or 2)
+   */
+  updateCell(row, col, player) {
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    if (cell) {
+      cell.classList.remove(`player${player}-hover`);
+      cell.classList.add(`player${player}`);
+    }
+  }
+
+  /**
+   * Update a column to show hover state
+   * @param {number} col - Column index to update
+   * @param {number} lowestRow - Lowest row in the column
+   * @param {number} player - Current player (1 or 2)
+   * @param {boolean} [clear=false] - Whether to clear the hover state
+   */
+  updateColumnHover(col, lowestRow, player, clear = false) {
+    const cell = document.querySelector(`[data-row="${lowestRow}"][data-col="${col}"]`);
+    if (!cell) return;
+
+    if (!clear) {
+      cell.classList.add(`player${player}-hover`);
+      cell.parentElement.classList.add('column-hover');
+    } else {
+      cell.classList.remove(`player${player}-hover`);
+      cell.parentElement.classList.remove('column-hover');
+    }
+  }
+  
+  /**
+   * Clears hover state from a column
+   * @param {number} col - Column index
+   */
+  clearColumnHover(col) {
+    document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
+      cell.classList.remove('player1-hover', 'player2-hover');
+      cell.parentElement.classList.remove('column-hover')
+    })
+  }
+
+  /**
+   * Clears a cell to its initial state
+   * @param {number} row - Row index of the cell
+   * @param {number} col -Column index of the cell
+   */
+  clearCell(row, col) {
+    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    if (cell) {
+      cell.classList = ['cell'];
+    }
+  }
+
+  /**
+   * Clears hover states any hovered columns
+   */
+  clearAllHoverStates() {
+    if (this.#hoveredColumn !== null) {
+      this.clearColumnHover(this.#hoveredColumn);
+      this.#hoveredColumn = null;
+    }
+  }
+
+  /**
+   * Updates the current player display
+   * @param {number} playerNum - Player number (1 or 2)
+   */
+  updateCurrentPlayer(playerNum) {
+    const { name, color } = this.#settingsManager.getPlayerSettings(playerNum);
+    this.#elements.currentPlayer.textContent = name;
+    this.#elements.playerColor.style.backgroundColor = color;
+  }
+
+  /**
+   * Updates the winner display
+   * @param {number|null} playerNum - Player number (1 or 2), or null for draw
+   */
+  updateWinnerDisplay(playerNum) {
+    if (playerNum) {
+      const player = this.#settingsManager.getPlayerSettings(playerNum);
+      this.#elements.currentPlayer.textContent = `Winner: ${player.name}`;
+      this.#elements.playerColor.style.backgroundColor = player.color;
+    } else {
+      this.#elements.currentPlayer.textContent = "It's a draw!";
+      this.#elements.playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
+    }
+  }
+
+  /**
+   * Highlights winning cells
+   * @param {Array<{row: number, col: number}>} positions - Winning positions
+   */
+  highlightWinningCells(positions) {
+    positions.forEach(({ row, col }) => {
+      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      if (cell) {
+        cell.classList.add('winning-cell');
+      }
+    });
+  }
+
+  /**
+   * Unhighlights winning cells
+   * @param {Array<{row: number, col: number}>} positions - Winning positions
+   */
+  unhighlightWinningCells(positions) {
+    positions.forEach(({ row, col }) => {
+      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      if (cell) {
+        cell.classList.remove('winning-cell');
+      }
+    });
+  }
+
+  /**
+   * Highlights the restart button
+   * @param {boolean} highlight - Whether to highlight
+   */
+  highlightRestartButton(highlight) {
+    const restartButton = document.getElementById("restart-game");
+    if (restartButton) {
+      if (highlight) {
+        restartButton.classList.add('highlight');
+      } else {
+        restartButton.classList.remove('highlight');
+      }
+    }
+  }
+
+  /**
+   * Update stats display with current values
+   */
+  updateStats() {
+    const { player1, player2, draws } = this.#settingsManager.getAllSettings();
+    
+    for (const el of this.#elements.stats.player1) {
+      el.textContent = player1.wins;
+    }
+    
+    for (const el of this.#elements.stats.player2) {
+      el.textContent = player2.wins;
+    }
+    
+    for (const el of this.#elements.stats.draws) {
+      el.textContent = draws;
+    }
+  }
+}
