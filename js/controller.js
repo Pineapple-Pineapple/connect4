@@ -1,203 +1,285 @@
 /**
- * @fileoverview Game controller that coordinates between the Connect4 game logic,
- * the settings manager, and the UI manager. Handles game flow, user interactions,
- * and updates the UI based on game state.
+ * @fileoverview Coordinates between the Connect4 game logic,
+ * the settings manager, and the UI manager. Handles game flow and user interactions.
+ * 
+ * @typedef {import('./settings.js').SettingsManager} SettingsManager
+ * @typedef {import('./ui.js').UIManager} UIManager
+ * @typedef {import('./connect4.js').MoveResult} MoveResult
  */
 
 import { Connect4 } from "./connect4.js";
 
-/**
- * Controller class that manages game flow and coordinates between game logic and UI
- */
 export class GameController {
   /**
-   * Creates a new game controller
-   * @param {import('./settings.js').SettingsManager} settingsManager - The settings manager instance
-   * @param {import('./ui.js').UIManager} uiManager - The UI manager instance
+   * @private
+   * @type {SettingsManager}
+   */
+  #settingsManager;
+  
+  /**
+   * @private
+   * @type {UIManager}
+   */
+  #uiManager;
+  
+  /**
+   * @private
+   * @type {Connect4}
+   */
+  #connect4;
+
+  /**
+   * @param {SettingsManager} settingsManager - The settings manager instance
+   * @param {UIManager} uiManager - The UI manager instance
    */
   constructor(settingsManager, uiManager) {
-    /** @type {import('./settings.js').SettingsManager} Settings manager instance */
-    this.settingsManager = settingsManager;
+    this.#settingsManager = settingsManager;
+    this.#uiManager = uiManager;
+    this.#connect4 = new Connect4();
     
-    /** @type {import('./ui.js').UIManager} UI manager instance */
-    this.uiManager = uiManager;
-    
-    /** @type {Connect4} Connect4 game logic instance */
-    this.connect4 = new Connect4();
-    
-    this.setupUIHandlers();
+    this.#setupEventListeners();
   }
 
   /**
-   * Sets up event handlers for user interactions with the UI
+   * Sets up event listeners for game events
+   * @private
    */
-  setupUIHandlers() {
-    this.uiManager.onColumnClick = this.handleMove.bind(this);
-    this.uiManager.handlePointerEnter = this.handlePointerEnter.bind(this);
-    this.uiManager.handlePointerLeave = this.handlePointerLeave.bind(this);
-    this.uiManager.handleTouchMove = this.handleTouchMove.bind(this);
-    this.uiManager.handleTouchEnd = this.handleTouchEnd.bind(this);
+  #setupEventListeners() {
+    // UI event listeners
+    this.#uiManager.addEventListener('columnClick', this.#handleMove.bind(this));
+    this.#uiManager.addEventListener('columnEnter', this.#handleColumnEnter.bind(this));
+    this.#uiManager.addEventListener('columnLeave', this.#handleColumnLeave.bind(this));
+    this.#uiManager.addEventListener('touchMove', this.#handleTouchMove.bind(this));
+    this.#uiManager.addEventListener('touchEnd', this.#handleTouchEnd.bind(this));
+    this.#uiManager.addEventListener('resetStats', this.#handleResetStats.bind(this));
+    this.#uiManager.addEventListener('toggleScreen', this.#handleToggleScreen.bind(this));
+    
+    // Game event listeners
+    this.#connect4.addEventListener('move', this.#handleGameMove.bind(this));
+    this.#connect4.addEventListener('win', this.#handleGameWin.bind(this));
+    this.#connect4.addEventListener('draw', this.#handleGameDraw.bind(this));
+    this.#connect4.addEventListener('reset', this.#handleGameReset.bind(this));
+    this.#connect4.addEventListener('undo', this.#handleGameUndo.bind(this));
   }
 
   /**
    * Starts a new game with current settings
    */
-  startNewgame() {
-    const { rows, cols } = this.settingsManager.getBoardSettings();
-    this.connect4 = new Connect4(rows, cols);
+  startNewGame() {
+    const { rows, columns } = this.#settingsManager.getBoardSettings();
+    this.#connect4 = new Connect4(rows, columns);
+    
+    // Re-attach game event listeners
+    this.#connect4.addEventListener('move', this.#handleGameMove.bind(this));
+    this.#connect4.addEventListener('win', this.#handleGameWin.bind(this));
+    this.#connect4.addEventListener('draw', this.#handleGameDraw.bind(this));
+    this.#connect4.addEventListener('reset', this.#handleGameReset.bind(this));
+    this.#connect4.addEventListener('undo', this.#handleGameUndo.bind(this));
+    
+    this.#uiManager.createBoard();
+
     this.resetGame();
-    this.uiManager.showGameScreen();
-    this.uiManager.updateSettingsForm();
-    this.updateCurrentPlayer();
+    this.#uiManager.showGameScreen();
+    this.#updateCurrentPlayer();
   }
 
   /**
    * Handles a player making a move in a specific column
+   * @private
    * @param {number} column - The column index where the move is made
    * @param {boolean} [updateColumn=false] - Whether to update the column hover effect
    */
-  handleMove(column, updateColumn = false) {
-    if (this.connect4.isGameOver) return;
+  #handleMove(column, updateColumn = true) {
+    if (this.#connect4.isGameOver) return;
+    const result = this.#connect4.makeMove(column);
+    if (!updateColumn && result) this.#uiManager.updateColumnHover(result.column, this.#connect4.getLowestEmptyRow(result.column), result.player === 1 ? 2 : 1, true);
+  }
 
-    const result = this.connect4.makeMove(column);
-    if (!result) return;
+  makeMove(column) {
+    this.#handleMove(column);
+  }
 
-    this.uiManager.updateCell(result.row, result.column, result.player);
-
-    if (result.type === 'win' || result.type === 'draw') {
-      this.handleGameEnd(result);
-    } else {
-      this.updateCurrentPlayer();
-      if (!updateColumn) this.uiManager.updateColumn(result.column, this.connect4.getLowestEmptyRow(result.column), this.connect4.getCurrentPlayer());
+  /**
+   * Handles game move events from Connect4
+   * @private
+   * @param {MoveResult} result - The move result
+   */
+  #handleGameMove(result) {
+    this.#uiManager.updateCell(result.row, result.column, result.player);
+    this.#updateCurrentPlayer();
+    
+    const lowestEmptyRow = this.#connect4.getLowestEmptyRow(result.column);
+    if (lowestEmptyRow !== -1) {
+      this.#uiManager.updateColumnHover(
+        result.column, 
+        lowestEmptyRow, 
+        this.#connect4.getCurrentPlayer()
+      );
     }
   }
 
   /**
-   * Undoes the last move and updates the UI accordingly
+   * Handles game win events from Connect4
+   * @private
+   * @param {MoveResult} result - The move result
    */
-  undoMove() {
-    const move = this.connect4.undoMove();
-    if (move === -1) return;
+  #handleGameWin(result) {
+    this.#settingsManager.updateStats({ type: 'win', player: result.player });
+    this.#uiManager.updateStats();
+    this.#uiManager.disableBoard();
+    this.#uiManager.highlightRestartButton(true);
+    this.#uiManager.highlightWinningCells(this.#connect4.winningPositions);
+    this.#uiManager.updateWinnerDisplay(result.player);
+  }
+
+  /**
+   * Handles game draw events from Connect4
+   * @private
+   */
+  #handleGameDraw() {
+    this.#settingsManager.updateStats({ type: 'draw' });
+    this.#uiManager.updateStats();
+    this.#uiManager.disableBoard();
+    this.#uiManager.highlightRestartButton(true);
+    this.#uiManager.updateWinnerDisplay(null);
+  }
+
+  /**
+   * Handles game reset events from Connect4
+   * @private
+   */
+  #handleGameReset() {
+    this.#uiManager.resetBoard();
+    this.#uiManager.enableBoard();
+    this.#uiManager.highlightRestartButton(false);
+    this.#updateCurrentPlayer();
+  }
+
+  /**
+   * Handles game undo events from Connect4
+   * @private
+   * @param {MoveResult} move - The undone move
+   */
+  #handleGameUndo(move) {
     if (move.type === 'win') {
-      for (const winCell of move.winningCells) {
-        const cell = document.querySelector(`[data-row="${winCell[0]}"][data-col="${winCell[1]}"]`);
-        cell.classList.remove('winning-cell');
-      }
-      this.settingsManager.save({
+      this.#uiManager.unhighlightWinningCells(move.winningPositions || []);
+      
+      // Revert the win stat
+      const playerSettings = this.#settingsManager.getPlayerSettings(move.player);
+      this.#settingsManager.updateSettings({
         [`player${move.player}`]: {
-          wins: this.settingsManager.getPlayerSettings(move.player).wins - 1
+          wins: Math.max(0, playerSettings.wins - 1)
         }
-      })
+      });
     } else if (move.type === 'draw') {
-      this.settingsManager.save({
-        draws: this.settingsManager.settings.draws - 1
-      })
+      // Revert the draw stat
+      const settings = this.#settingsManager.getAllSettings();
+      this.#settingsManager.updateSettings({
+        draws: Math.max(0, settings.draws - 1)
+      });
     }
-
-    document.getElementById("restart-game").classList.remove('highlight');
-    this.uiManager.updateStats();
-    this.uiManager.clearCell(move.row, move.column);
-    this.uiManager.enableBoard();
-    this.updateCurrentPlayer();
+    
+    this.#uiManager.updateStats();
+    this.#uiManager.clearCell(move.row, move.column);
+    this.#uiManager.enableBoard();
+    this.#uiManager.highlightRestartButton(false);
+    this.#updateCurrentPlayer();
   }
 
   /**
-   * Handles pointer entering a column for hover effects
-   * @param {number} col - The column index being hovered
+   * Handles pointer entering a column
+   * @private
+   * @param {number} column - The column being entered
    */
-  handlePointerEnter(col) {
-    if (this.connect4.isGameOver || this.connect4.isColumnFull(col)) return
-    this.uiManager.hoveredColumn = col;
-    const lowest = this.connect4.getLowestEmptyRow(col);
-    const player = this.connect4.getCurrentPlayer();
-    this.uiManager.updateColumn(col, lowest, player)
+  #handleColumnEnter(column) {
+    if (this.#connect4.isGameOver || this.#connect4.isColumnFull(column)) return;
+    
+    this.#uiManager.hoveredColumn = column;
+    const lowestEmptyRow = this.#connect4.getLowestEmptyRow(column);
+    const currentPlayer = this.#connect4.getCurrentPlayer();
+    
+    this.#uiManager.updateColumnHover(column, lowestEmptyRow, currentPlayer);
   }
 
   /**
-   * Handles pointer leaving a column to clear hover effects
+   * Handles pointer leaving a column
+   * @private
    */
-  handlePointerLeave() {
-    this.uiManager.clearAllHoverStates();
+  #handleColumnLeave() {
+    this.#uiManager.clearAllHoverStates();
   }
 
   /**
-   * Handles touch move events for mobile play
+   * Handles touch move events
+   * @private
    * @param {TouchEvent} e - The touch move event
    */
-  handleTouchMove(e) {
+  #handleTouchMove(e) {
     e.preventDefault();
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    const col = element?.closest('.column')?.dataset.col;
+    const column = element?.closest('.column')?.dataset.col;
     
-    if (col !== this.uiManager.hoveredColumn) {
-      this.uiManager.clearAllHoverStates();
-      col !== undefined && this.handlePointerEnter(parseInt(col));
+    if (column !== undefined && parseInt(column) !== this.#uiManager.hoveredColumn) {
+      this.#uiManager.clearAllHoverStates();
+      this.#handleColumnEnter(parseInt(column));
     }
   }
 
   /**
-   * Handles touch end events for mobile play
+   * Handles touch end events
+   * @private
    * @param {TouchEvent} e - The touch end event
    */
-  handleTouchEnd(e) {
+  #handleTouchEnd(e) {
     e.preventDefault();
     const touch = e.changedTouches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    const col = element?.closest('.column')?.dataset.col;
+    const column = element?.closest('.column')?.dataset.col;
     
-    this.uiManager.clearAllHoverStates();
-    col !== undefined && this.handleMove(parseInt(col), true);
+    this.#uiManager.clearAllHoverStates();
+    
+    if (column !== undefined) {
+      this.#handleMove(parseInt(column), false);
+    }
   }
 
   /**
-   * Handles the end of a game (win or draw)
-   * @param {import('./connect4.js').MoveResult} result - The result of the final move
+   * Handles reset stats button click
+   * @private
    */
-  handleGameEnd(result) {
-    this.settingsManager.updateStats(result);
-    this.uiManager.updateStats();
-    this.uiManager.disableBoard();
-    document.getElementById("restart-game").classList.add('highlight');
+  #handleResetStats() {
+    this.#settingsManager.resetStats();
+  }
 
-    if (result.type === 'win') {
-      this.highlightWinningCells();
-      const player = this.settingsManager.getPlayerSettings(result.player).name
-      this.uiManager.elements.currentPlayer.textContent = `Winner: ${player}`;
-    } else if (result.type === 'draw') {
-      this.uiManager.elements.currentPlayer.textContent = "It's a draw!";
-      this.uiManager.elements.playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
-    }
+  /**
+   * Handles toggling between game and settings screens
+   * @private
+   */
+  #handleToggleScreen() {
+    // Additional logic when screens change
   }
 
   /**
    * Updates the UI to show the current player
+   * @private
    */
-  updateCurrentPlayer() {
-    const currentPlayer = this.connect4.getCurrentPlayer();
-    const { name, color } = this.settingsManager.getPlayerSettings(currentPlayer);
-    this.uiManager.elements.currentPlayer.textContent = name;
-    this.uiManager.elements.playerColor.style.backgroundColor = color;
+  #updateCurrentPlayer() {
+    const currentPlayer = this.#connect4.getCurrentPlayer();
+    this.#uiManager.updateCurrentPlayer(currentPlayer);
   }
 
   /**
-   * Highlights the cells that form the winning connection
+   * Undoes the last move if possible
    */
-  highlightWinningCells() {
-    this.connect4.winningCells.forEach(([ row, col ]) => {
-      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-      cell.classList.add('winning-cell');
-    })
+  undoMove() {
+    this.#connect4.undoMove();
   }
 
   /**
-   * Resets the game state and UI
+   * Resets the game
    */
   resetGame() {
-    this.connect4.reset();
-    this.uiManager.resetBoard();
-    document.getElementById("restart-game").classList.remove('highlight');
-    this.updateCurrentPlayer();
-    this.uiManager.updateStats();
+    this.#connect4.reset();
   }
 }
