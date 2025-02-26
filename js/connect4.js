@@ -3,7 +3,7 @@
  * move validation, win detection, and board management
  * 
  * @typedef {Array<Array<Number>>} GameBoard
- * A 2D array representing the game baord where:
+ * A 2D array representing the game board where:
  *   - 0 represents an empty cell
  *   - 1 represents Player 1's piece
  *   - 2 represents Player 2's piece
@@ -19,6 +19,7 @@
  * @property {number} column - Column where piece was placed
  * @property {number} player - Player who made the move (1 or 2)
  * @property {gameResultType} type - Type of move result
+ * @property {Array<Position>} [winningPositions] - Winning positions if a player won the game
  * 
  * @typedef {Object} GameEventMap
  * @property {function(MoveResult):void} move - Called when a move is made
@@ -45,7 +46,7 @@ export class Connect4 {
    * @private
    * @type {number}
    */
-  #cols;
+  #columns;
 
   /**
    * @private
@@ -92,11 +93,11 @@ export class Connect4 {
   /**
    * Creates a new board with specified dimensions
    * @param {number} [rows=6] - Number of rows in the board
-   * @param {number} [cols=7] - Number of columns in the baord
+   * @param {number} [columns=7] - Number of columns in the board
    */
-  constructor(rows = 6, cols = 7) {
+  constructor(rows = 6, columns = 7) {
     this.#rows = rows;
-    this.#cols = cols;
+    this.#columns = columns;
     this.reset();
   }
 
@@ -140,7 +141,7 @@ export class Connect4 {
    * Resets the game to its initial state
    */
   reset() {
-    this.#board = Array(this.#rows).fill().map(() => Array(this.#cols).fill(0))
+    this.#board = Array(this.#rows).fill().map(() => Array(this.#columns).fill(0))
     this.#moveHistory = []
     this.#winningPositions = []
     this.#gameOver = false;
@@ -162,8 +163,8 @@ export class Connect4 {
    * Gets the number of columns in the board
    * @return {number} - Number of columns
    */
-  get cols() {
-    return this.#cols;
+  get columns() {
+    return this.#columns;
   }
 
   /**
@@ -184,7 +185,7 @@ export class Connect4 {
   }
 
   /**
-   * @gets the winner of the game (1 or 2), or null if no winner
+   * @get the winner of the game (1 or 2), or null if no winner
    * @returns {number} The winner
    */
   get winner() {
@@ -212,7 +213,7 @@ export class Connect4 {
    * @return {number} The current player (1 or 2)
    */
   getCurrentPlayer() {
-    return this.#moveHistory % 2 + 1;
+    return this.#moveHistory.length % 2 + 1;
   }
 
   /**
@@ -242,8 +243,9 @@ export class Connect4 {
       this.#gameOver = true;
       this.#winner = player;
       result.type = 'win';
+      result.winningPositions = this.#winningPositions;
       this.#dispatchEvent('win', result);
-    } else if (this.#moveHistory.length === this.#rows * this.#cols) {
+    } else if (this.#moveHistory.length === this.#rows * this.#columns) {
       this.#gameOver = true;
       this.#isDrawn = true;
       result.type = 'draw';
@@ -262,7 +264,6 @@ export class Connect4 {
 
     return {
       ...this.#moveHistory[this.#moveHistory.length - 1],
-      winningPositions: this.#winningPositions
     };
   }
 
@@ -292,7 +293,7 @@ export class Connect4 {
    * @returns {Boolean} Whether the move is valid
    */
   isValidMove(column) {
-    return column >= 0 && column <= this.#cols && this.#board[0][column] === 0;
+    return column >= 0 && column < this.#columns && this.#board[0][column] === 0;
   }
 
   /**
@@ -310,7 +311,7 @@ export class Connect4 {
    * @returns {number} The row index of the lowest empty cell, or -1 if column full
    */
   getLowestEmptyRow(column) {
-    for (let row = this.#rows; row >= 0; row--) {
+    for (let row = this.#rows - 1; row >= 0; row--) {
       if (this.#board[row][column] === 0) {
         return row;
       }
@@ -380,7 +381,7 @@ export class Connect4 {
    * @returns {boolean} Whether the cell is valid
    */
   #isValidCell(row, col) {
-    return row >= 0 && row < this.#rows && col >= 0 && col < this.#cols;
+    return row >= 0 && row < this.#rows && col >= 0 && col < this.#columns;
   }
 
   /**
@@ -390,7 +391,7 @@ export class Connect4 {
    * @param {number} col - Starting column
    * @param {number} dr - Row direction (-1, 0, or 1)
    * @param {number} dc - Column direction (-1, 0, or 1)
-   * @returns {Array<number>} Array of positions of winning cells
+   * @returns {Array<Position>} Array of positions of winning cells
    */
   #getWinningPositions(row, col, dr, dc) {
     const positions = [{ row, col }];

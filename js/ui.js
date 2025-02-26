@@ -1,5 +1,5 @@
 /**
- * @fileoverview Manages visual presentation ad, user interaction,
+ * @fileoverview Manages visual presentation and user interaction,
  * game board, settings screen, and user interface
  * 
  * @typedef {Object} UIEventMap
@@ -41,7 +41,7 @@ export class UIManager {
 
   /**
    * @private
-   * @type {Object.<string, Set<Function>}
+   * @type {Object.<string, Set<Function>>}
    */
   #eventListeners = {
     columnClick: new Set(),
@@ -59,6 +59,11 @@ export class UIManager {
    */
   #currentScreen = 'settings';
 
+  /**
+   * @private
+   * @type {boolean}
+   */
+  #isGameInitialized = false;
 
   /**
    * @param {SettingsManager} settingsManager - The settings manager instance
@@ -68,7 +73,7 @@ export class UIManager {
 
     this.#settingsManager.addEventListener('settingsChanged', () => {
       this.#updateUIFromSettings();
-    })
+    });
 
     this.#cacheElements();
     this.#initializeUI();
@@ -119,12 +124,7 @@ export class UIManager {
     this.#elements = {
       gameContainer: document.getElementById('game-container'),
       settingsContainer: document.getElementById('settings-container'),
-      board: document.getElementById('board'),
       boardTemplate: document.getElementById('game-template'),
-      currentPlayer: document.getElementById('current-player'),
-      playerColor: document.getElementById('player-color'),
-      resetStats: document.getElementById('reset-stats'),
-      settings: document.getElementById('settings'),
       stats: {
         player1: document.getElementsByClassName('wins-1'),
         player2: document.getElementsByClassName('wins-2'),
@@ -139,7 +139,7 @@ export class UIManager {
         boardCols: document.getElementById('board-cols'),
         boardColor: document.getElementById('board-color'),
       }
-    }
+    };
   }
 
   /**
@@ -147,11 +147,47 @@ export class UIManager {
    * @private
    */
   #setupEventListeners() {
-    // Board Ineraction
-    this.#elements.board.addEventListener('click', this.#handleBoardClick.bind(this));
+    const resetStats = document.getElementById('reset-stats');
+    if (resetStats) {
+      resetStats.addEventListener('click', () => {
+        this.#dispatchEvent('resetStats');
+      });
+    }
+
+    // Keypress for numerical input
+    document.addEventListener('keypress', (e) => {
+      if (!isNaN(parseInt(e.key))) {
+        this.#dispatchEvent('columnClick', parseInt(e.key) - 1);
+      }
+    });
+  }
+
+  /**
+   * Sets up event listeners specific to the game controls
+   * @private
+   */
+  #setupGameControlEventListeners() {
+    const settingsButton = document.getElementById('settings');
+    if (settingsButton) {
+      settingsButton.addEventListener('click', () => {
+        this.#dispatchEvent('toggleScreen');
+      });
+    }
+  }
+
+  /**
+   * Sets up event listeners specific to the board cells and columns
+   * @private
+   */
+  #setupBoardEventListeners() {
+    const board = document.getElementById('board');
+    if (!board) return;
+
+    // Board interaction
+    board.addEventListener('click', this.#handleBoardClick.bind(this));
 
     // Board columns
-    for (const col of this.#elements.board.children) {
+    for (const col of board.children) {
       col.addEventListener('mouseenter', () => {
         this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
       });
@@ -177,27 +213,17 @@ export class UIManager {
         this.#dispatchEvent('touchEnd', e);
       });
     }
-
-    // Reset Stats
-    this.#elements.resetStats.addEventListener('click', () => {
-      this.#dispatchEvent('resetStats');
-    })
-
-    // Settings
-    this.#elements.settings.addEventListener('click', () => {
-      this.#dispatchEvent('toggleScreen');
-    })
   }
 
   /**
-   * Handles click events on the game baord
+   * Handles click events on the game board
    * @private
    * @param {MouseEvent} e - The click event
    */
   #handleBoardClick(e) {
     const column = e.target.closest('.column')?.dataset?.col;
     if (column !== undefined) {
-      this.#dispatchEvent('columnClick', parseInt(column))
+      this.#dispatchEvent('columnClick', parseInt(column));
     }
   }
 
@@ -206,8 +232,7 @@ export class UIManager {
    * @private
    */
   #initializeUI() {
-    this.#setCSSVariables(); 
-    this.createBoard();
+    this.#setCSSVariables();
     this.#updateUIFromSettings();
   }
 
@@ -228,13 +253,23 @@ export class UIManager {
     const { player1, player2, board } = this.#settingsManager.getAllSettings();
 
     // Update color inputs
-    this.#elements.settings.player1Color.value = player1.color;
-    this.#elements.settings.player2Color.value = player2.color;
-    this.#elements.settings.boardColor.value = board.color;
+    if (this.#elements.settings.player1Color) {
+      this.#elements.settings.player1Color.value = player1.color;
+    }
+    if (this.#elements.settings.player2Color) {
+      this.#elements.settings.player2Color.value = player2.color;
+    }
+    if (this.#elements.settings.boardColor) {
+      this.#elements.settings.boardColor.value = board.color;
+    }
 
     // Update board dimension inputs
-    this.#elements.settings.boardRows.value = board.rows;
-    this.#elements.settings.boardCols.value = board.columns;
+    if (this.#elements.settings.boardRows) {
+      this.#elements.settings.boardRows.value = board.rows;
+    }
+    if (this.#elements.settings.boardCols) {
+      this.#elements.settings.boardCols.value = board.columns;
+    }
 
     // Update player name elements
     for (const el of this.#elements.settings.player1Name) {
@@ -257,6 +292,21 @@ export class UIManager {
     document.documentElement.style.setProperty('--player1-color', player1.color);
     document.documentElement.style.setProperty('--player2-color', player2.color);
     document.documentElement.style.setProperty('--board-color', board.color);
+  }
+
+  /**
+   * Initializes the game UI from the template
+   * @private
+   */
+  #initializeGameUI() {
+    if (this.#isGameInitialized) return;
+    
+    // Insert template content into game container
+    if (this.#elements.boardTemplate && this.#elements.gameContainer) {
+      this.#elements.gameContainer.innerHTML = this.#elements.boardTemplate.innerHTML;
+      this.#setupGameControlEventListeners();
+      this.#isGameInitialized = true;
+    }
   }
 
   /**
@@ -290,7 +340,7 @@ export class UIManager {
     if (this.#currentScreen === 'game') {
       this.showSettingsScreen();
     } else {
-      this.showGameScreen;
+      this.showGameScreen();
     }
 
     this.#dispatchEvent('toggleScreen');
@@ -300,39 +350,38 @@ export class UIManager {
    * Shows the game screen and hides the settings screen
    */
   showGameScreen() {
+    this.#initializeGameUI();
     this.#elements.settingsContainer.style.display = 'none';
     this.#elements.gameContainer.style.display = 'block';
-    this.#currentScreen = 'game'
+    this.#currentScreen = 'game';
   }
 
   /**
    * Shows the settings screen and hides the game screen
    */
-  showGameScreen() {
+  showSettingsScreen() {
     this.#elements.settingsContainer.style.display = 'block';
     this.#elements.gameContainer.style.display = 'none';
-    this.#currentScreen = 'settings'
+    this.#currentScreen = 'settings';
   }
 
   /**
    * Creates the game board based on current settings
    */
   createBoard() {
-    // Insert template HTML
-    const template = this.#elements.boardTemplate.innerHTML;
-    this.#elements.gameContainer.innerHTML = template;
+    // Make sure game UI is initialized
+    this.#initializeGameUI();
     
-    // Re-cache elements as they've been recreated
-    this.#cacheElements();
-    this.#setupEventListeners();
+    const board = document.getElementById('board');
+    if (!board) return;
     
     // Set board dimensions
-    const { rows, cols } = this.#settingsManager.getBoardSettings();
-    this.#elements.board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    this.#elements.board.innerHTML = '';
+    const { rows, columns } = this.#settingsManager.getBoardSettings();
+    board.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    board.innerHTML = '';
 
     // Create columns and cells
-    for (let col = 0; col < cols; col++) {
+    for (let col = 0; col < columns; col++) {
       const column = document.createElement('div');
       column.classList.add('column');
       column.dataset.col = col;
@@ -345,15 +394,21 @@ export class UIManager {
         column.appendChild(cell);
       }
 
-      this.#elements.board.appendChild(column);
+      board.appendChild(column);
     }
+    
+    // Set up board-specific event listeners
+    this.#setupBoardEventListeners();
   }
 
   /**
    * Resets board back to initial state
    */
   resetBoard() {
-    for (const col of this.#elements.board.children) {
+    const board = document.getElementById('board');
+    if (!board) return;
+    
+    for (const col of board.children) {
       col.classList = ['column'];
       for (const cell of col.children) {
         cell.classList = ['cell'];
@@ -362,19 +417,25 @@ export class UIManager {
   }
 
   /**
-   * Disables user interaction with the baord
+   * Disables user interaction with the board
    */
   disableBoard() {
-    for (const col of this.#elements.board.children) {
+    const board = document.getElementById('board');
+    if (!board) return;
+    
+    for (const col of board.children) {
       col.classList.add('disabled');
     }
   }
 
   /**
-   * Enables user interaction with the baord
+   * Enables user interaction with the board
    */
   enableBoard() {
-    for (const col of this.#elements.board.children) {
+    const board = document.getElementById('board');
+    if (!board) return;
+    
+    for (const col of board.children) {
       col.classList.remove('disabled');
     }
   }
@@ -401,9 +462,11 @@ export class UIManager {
    * @param {boolean} [clear=false] - Whether to clear the hover state
    */
   updateColumnHover(col, lowestRow, player, clear = false) {
-    const cell = document.querySelector(`[data-row="${lowestRow}"][data-col="${col}"]`);
+    const cell = document.querySelector(`.cell[data-row="${lowestRow}"][data-col="${col}"]`);
     if (!cell) return;
 
+    this.clearColumnHover(col);
+    
     if (!clear) {
       cell.classList.add(`player${player}-hover`);
       cell.parentElement.classList.add('column-hover');
@@ -420,8 +483,8 @@ export class UIManager {
   clearColumnHover(col) {
     document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
       cell.classList.remove('player1-hover', 'player2-hover');
-      cell.parentElement.classList.remove('column-hover')
-    })
+      cell.parentElement.classList.remove('column-hover');
+    });
   }
 
   /**
@@ -451,9 +514,14 @@ export class UIManager {
    * @param {number} playerNum - Player number (1 or 2)
    */
   updateCurrentPlayer(playerNum) {
+    const currentPlayer = document.getElementById('current-player');
+    const playerColor = document.getElementById('player-color');
+    
+    if (!currentPlayer || !playerColor) return;
+    
     const { name, color } = this.#settingsManager.getPlayerSettings(playerNum);
-    this.#elements.currentPlayer.textContent = name;
-    this.#elements.playerColor.style.backgroundColor = color;
+    currentPlayer.textContent = name;
+    playerColor.style.backgroundColor = color;
   }
 
   /**
@@ -461,13 +529,18 @@ export class UIManager {
    * @param {number|null} playerNum - Player number (1 or 2), or null for draw
    */
   updateWinnerDisplay(playerNum) {
+    const currentPlayer = document.getElementById('current-player');
+    const playerColor = document.getElementById('player-color');
+    
+    if (!currentPlayer || !playerColor) return;
+    
     if (playerNum) {
       const player = this.#settingsManager.getPlayerSettings(playerNum);
-      this.#elements.currentPlayer.textContent = `Winner: ${player.name}`;
-      this.#elements.playerColor.style.backgroundColor = player.color;
+      currentPlayer.textContent = `Winner: ${player.name}`;
+      playerColor.style.backgroundColor = player.color;
     } else {
-      this.#elements.currentPlayer.textContent = "It's a draw!";
-      this.#elements.playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
+      currentPlayer.textContent = "It's a draw!";
+      playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
     }
   }
 

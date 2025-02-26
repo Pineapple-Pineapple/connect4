@@ -58,7 +58,7 @@ export class SettingsManager {
   #DEFAULT_SETTINGS = {
     player1: { name: 'Player 1', color: '#fb4934', wins: 0 },
     player2: { name: 'Player 2', color: '#fabd2f', wins: 0 },
-    board: { rows: 6, cols: 7, color: '#83a598' },
+    board: { rows: 6, columns: 7, color: '#83a598' },
     draws: 0
   }
 
