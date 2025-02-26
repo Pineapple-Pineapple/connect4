@@ -40,7 +40,7 @@ class GameApp {
    */
   #initialize() {
     this.#setupSettingsEventListeners();
-    this.#validatePlayerNames();
+    this.#validateFormInputs();
     this.#uiManager.showSettingsScreen();
     
     // Listen for screen toggle events to set up game controls when needed
@@ -70,14 +70,39 @@ class GameApp {
     const name1Input = document.getElementById("form-name-1");
     if (name1Input) {
       name1Input.addEventListener('input', () => {
-        this.#validatePlayerNames();
+        this.#validateFormInputs();
       });
     }
     
     const name2Input = document.getElementById("form-name-2");
     if (name2Input) {
       name2Input.addEventListener('input', () => {
-        this.#validatePlayerNames();
+        this.#validateFormInputs();
+      });
+    }
+    
+    // Board dimension inputs validation
+    const rowsInput = document.getElementById('board-rows');
+    if (rowsInput) {
+      rowsInput.addEventListener('input', () => {
+        this.#validateNumberInput(rowsInput);
+        this.#validateFormInputs();
+      });
+      
+      rowsInput.addEventListener('blur', () => {
+        this.#enforceMinMax(rowsInput);
+      });
+    }
+    
+    const colsInput = document.getElementById('board-cols');
+    if (colsInput) {
+      colsInput.addEventListener('input', () => {
+        this.#validateNumberInput(colsInput);
+        this.#validateFormInputs();
+      });
+      
+      colsInput.addEventListener('blur', () => {
+        this.#enforceMinMax(colsInput);
       });
     }
     
@@ -188,12 +213,74 @@ class GameApp {
   }
 
   /**
-   * Validate player names and update UI button states
+   * Validate number input fields as they're typed
+   * @private
+   * @param {HTMLInputElement} input - The number input element
+   */
+  #validateNumberInput(input) {
+    if (!input) return;
+    
+    const value = parseInt(input.value);
+    const min = parseInt(input.min);
+    const max = parseInt(input.max);
+    
+    // Visual feedback for invalid values
+    if (value < min || value > max || isNaN(value)) {
+      input.classList.add('invalid-input');
+    } else {
+      input.classList.remove('invalid-input');
+    }
+  }
+  
+  /**
+   * Enforce min/max constraints when input loses focus
+   * @private
+   * @param {HTMLInputElement} input - The number input element
+   */
+  #enforceMinMax(input) {
+    if (!input) return;
+    
+    const value = parseInt(input.value);
+    const min = parseInt(input.min);
+    const max = parseInt(input.max);
+    
+    if (isNaN(value)) {
+      input.value = min; // Default to min if not a number
+    } else if (value < min) {
+      input.value = min;
+    } else if (value > max) {
+      input.value = max;
+    }
+    
+    input.classList.remove('invalid-input');
+    this.#validateFormInputs();
+  }
+  
+  /**
+   * Check if a specific number input is valid
+   * @private
+   * @param {HTMLInputElement} input - The input element to check
+   * @returns {boolean} Whether the input is valid
+   */
+  #isNumberInputValid(input) {
+    if (!input) return false;
+    
+    const value = parseInt(input.value);
+    const min = parseInt(input.min);
+    const max = parseInt(input.max);
+    
+    return !isNaN(value) && value >= min && value <= max;
+  }
+
+  /**
+   * Validate all form inputs and update UI button states
    * @private
    */
-  #validatePlayerNames() {
+  #validateFormInputs() {
     const name1 = document.getElementById("form-name-1");
     const name2 = document.getElementById("form-name-2");
+    const rowsInput = document.getElementById("board-rows");
+    const colsInput = document.getElementById("board-cols");
     const startGameBtn = document.getElementById("start-game");
     const save1Btn = document.getElementById("save-1");
     const save2Btn = document.getElementById("save-2");
@@ -207,8 +294,12 @@ class GameApp {
     save1Btn.disabled = !isName1Valid;
     save2Btn.disabled = !isName2Valid;
     
-    // Update start game button state
-    startGameBtn.disabled = !(isName1Valid && isName2Valid);
+    // Check board dimensions
+    const areRowsValid = this.#isNumberInputValid(rowsInput);
+    const areColsValid = this.#isNumberInputValid(colsInput);
+    
+    // Update start game button state - only enable if all inputs are valid
+    startGameBtn.disabled = !(isName1Valid && isName2Valid && areRowsValid && areColsValid);
   }
 }
 
