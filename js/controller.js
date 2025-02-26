@@ -51,6 +51,7 @@ export class GameController {
     this.#uiManager.addEventListener('columnLeave', this.#handleColumnLeave.bind(this));
     this.#uiManager.addEventListener('touchMove', this.#handleTouchMove.bind(this));
     this.#uiManager.addEventListener('touchEnd', this.#handleTouchEnd.bind(this));
+    this.#uiManager.addEventListener('keyPress', this.#handleKeyPress.bind(this));
     this.#uiManager.addEventListener('resetStats', this.#handleResetStats.bind(this));
     this.#uiManager.addEventListener('toggleScreen', this.#handleToggleScreen.bind(this));
     
@@ -242,6 +243,16 @@ export class GameController {
     if (column !== undefined) {
       this.#handleMove(parseInt(column), false);
     }
+  }
+
+  /**
+   * Handles a number keypress
+   * @private
+   * @param {number} key - The number key pressed
+   */
+  #handleKeyPress(key) {
+    if (key == 0) this.#handleMove(9, false);
+    else this.#handleMove(key - 1, false);
   }
 
   /**

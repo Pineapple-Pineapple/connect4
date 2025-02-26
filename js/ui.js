@@ -8,6 +8,7 @@
  * @property {function(number):void} columnLeave - Called when a pointer leaves a column
  * @property {function(TouchEvent):void} touchMove - Called when a touch moves across the board
  * @property {function(TouchEvent):void} touchEnd - Called when a touch ends
+ * @property {function(number):void} keyPress - Called when a key is pressed
  * @property {function():void} resetStats - Called when the user clicks the reset stats button
  * @property {function():void} toggleScreen - Called when the user switches screens
  * 
@@ -50,7 +51,8 @@ export class UIManager {
     touchMove: new Set(),
     touchEnd: new Set(),
     resetStats: new Set(),
-    toggleScreen: new Set()
+    toggleScreen: new Set(),
+    keyPress: new Set()
   };
 
   /**
@@ -156,8 +158,8 @@ export class UIManager {
 
     // Keypress for numerical input
     document.addEventListener('keypress', (e) => {
-      if (!isNaN(parseInt(e.key))) {
-        this.#dispatchEvent('columnClick', parseInt(e.key) - 1);
+      if (!isNaN(parseInt(e.key)) && this.#currentScreen === 'game') {
+        this.#dispatchEvent('keyPress', parseInt(e.key));
       }
     });
   }
