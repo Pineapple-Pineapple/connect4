@@ -1,7 +1,7 @@
 /**
  * @fileoverview Manages visual presentation and user interaction,
  * game board, settings screen, and user interface
- * 
+ *
  * @typedef {Object} UIEventMap
  * @property {function(number):void} columnClick - Called when a column is clicked
  * @property {function(number):void} columnEnter - Called when a pointer enters a column
@@ -11,7 +11,8 @@
  * @property {function(number):void} keyPress - Called when a key is pressed
  * @property {function():void} resetStats - Called when the user clicks the reset stats button
  * @property {function():void} toggleScreen - Called when the user switches screens
- * 
+ * @property {function():void} undo - Called when the user clicks the undo button
+ *
  * @typedef {import('./settings.js').SettingsManager} SettingsManager
  */
 
@@ -52,7 +53,8 @@ export class UIManager {
     touchEnd: new Set(),
     resetStats: new Set(),
     toggleScreen: new Set(),
-    keyPress: new Set()
+    keyPress: new Set(),
+    undo: new Set(),
   };
 
   /**
@@ -130,7 +132,7 @@ export class UIManager {
       stats: {
         player1: document.getElementsByClassName('wins-1'),
         player2: document.getElementsByClassName('wins-2'),
-        draws: document.getElementsByClassName('draws')
+        draws: document.getElementsByClassName('draws'),
       },
       settings: {
         player1Name: document.getElementsByClassName('name-1'),
@@ -140,7 +142,7 @@ export class UIManager {
         boardRows: document.getElementById('board-rows'),
         boardCols: document.getElementById('board-cols'),
         boardColor: document.getElementById('board-color'),
-      }
+      },
     };
   }
 
@@ -156,7 +158,6 @@ export class UIManager {
       });
     }
 
-    // Keypress for numerical input
     document.addEventListener('keypress', (e) => {
       if (!isNaN(parseInt(e.key)) && this.#currentScreen === 'game') {
         this.#dispatchEvent('keyPress', parseInt(e.key));
@@ -165,7 +166,7 @@ export class UIManager {
   }
 
   /**
-   * Sets up event listeners specific to the game controls
+   * Sets up event listeners for the game controls
    * @private
    */
   #setupGameControlEventListeners() {
@@ -173,6 +174,20 @@ export class UIManager {
     if (settingsButton) {
       settingsButton.addEventListener('click', () => {
         this.#dispatchEvent('toggleScreen');
+      });
+    }
+
+    const restartGameBtn = document.getElementById('restart-game');
+    if (restartGameBtn) {
+      restartGameBtn.addEventListener('click', () => {
+        this.#dispatchEvent('restart');
+      });
+    }
+
+    const undoButton = document.getElementById('undo-move');
+    if (undoButton) {
+      undoButton.addEventListener('click', () => {
+        this.#dispatchEvent('undo');
       });
     }
   }
@@ -185,10 +200,8 @@ export class UIManager {
     const board = document.getElementById('board');
     if (!board) return;
 
-    // Board interaction
     board.addEventListener('click', this.#handleBoardClick.bind(this));
 
-    // Board columns
     for (const col of board.children) {
       col.addEventListener('mouseenter', () => {
         this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
@@ -254,7 +267,6 @@ export class UIManager {
   updateSettingsForm() {
     const { player1, player2, board } = this.#settingsManager.getAllSettings();
 
-    // Update color inputs
     if (this.#elements.settings.player1Color) {
       this.#elements.settings.player1Color.value = player1.color;
     }
@@ -265,7 +277,6 @@ export class UIManager {
       this.#elements.settings.boardColor.value = board.color;
     }
 
-    // Update board dimension inputs
     if (this.#elements.settings.boardRows) {
       this.#elements.settings.boardRows.value = board.rows;
     }
@@ -273,12 +284,11 @@ export class UIManager {
       this.#elements.settings.boardCols.value = board.columns;
     }
 
-    // Update player name elements
     for (const el of this.#elements.settings.player1Name) {
       el.textContent = player1.name;
       if (el.tagName === 'INPUT') el.value = player1.name;
     }
-    
+
     for (const el of this.#elements.settings.player2Name) {
       el.textContent = player2.name;
       if (el.tagName === 'INPUT') el.value = player2.name;
@@ -291,8 +301,14 @@ export class UIManager {
    */
   #setCSSVariables() {
     const { player1, player2, board } = this.#settingsManager.getAllSettings();
-    document.documentElement.style.setProperty('--player1-color', player1.color);
-    document.documentElement.style.setProperty('--player2-color', player2.color);
+    document.documentElement.style.setProperty(
+      '--player1-color',
+      player1.color,
+    );
+    document.documentElement.style.setProperty(
+      '--player2-color',
+      player2.color,
+    );
     document.documentElement.style.setProperty('--board-color', board.color);
   }
 
@@ -302,10 +318,10 @@ export class UIManager {
    */
   #initializeGameUI() {
     if (this.#isGameInitialized) return;
-    
-    // Insert template content into game container
+
     if (this.#elements.boardTemplate && this.#elements.gameContainer) {
-      this.#elements.gameContainer.innerHTML = this.#elements.boardTemplate.innerHTML;
+      this.#elements.gameContainer.innerHTML =
+        this.#elements.boardTemplate.innerHTML;
       this.#setupGameControlEventListeners();
       this.#isGameInitialized = true;
     }
@@ -371,18 +387,15 @@ export class UIManager {
    * Creates the game board based on current settings
    */
   createBoard() {
-    // Make sure game UI is initialized
     this.#initializeGameUI();
-    
+
     const board = document.getElementById('board');
     if (!board) return;
-    
-    // Set board dimensions
+
     const { rows, columns } = this.#settingsManager.getBoardSettings();
     board.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
     board.innerHTML = '';
 
-    // Create columns and cells
     for (let col = 0; col < columns; col++) {
       const column = document.createElement('div');
       column.classList.add('column');
@@ -398,8 +411,7 @@ export class UIManager {
 
       board.appendChild(column);
     }
-    
-    // Set up board-specific event listeners
+
     this.#setupBoardEventListeners();
   }
 
@@ -409,7 +421,7 @@ export class UIManager {
   resetBoard() {
     const board = document.getElementById('board');
     if (!board) return;
-    
+
     for (const col of board.children) {
       col.classList = ['column'];
       for (const cell of col.children) {
@@ -424,7 +436,7 @@ export class UIManager {
   disableBoard() {
     const board = document.getElementById('board');
     if (!board) return;
-    
+
     for (const col of board.children) {
       col.classList.add('disabled');
     }
@@ -436,7 +448,7 @@ export class UIManager {
   enableBoard() {
     const board = document.getElementById('board');
     if (!board) return;
-    
+
     for (const col of board.children) {
       col.classList.remove('disabled');
     }
@@ -449,7 +461,9 @@ export class UIManager {
    * @param {number} player - Player number (1 or 2)
    */
   updateCell(row, col, player) {
-    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    const cell = document.querySelector(
+      `[data-row="${row}"][data-col="${col}"]`,
+    );
     if (cell) {
       cell.classList.remove(`player${player}-hover`);
       cell.classList.add(`player${player}`);
@@ -464,11 +478,13 @@ export class UIManager {
    * @param {boolean} [clear=false] - Whether to clear the hover state
    */
   updateColumnHover(col, lowestRow, player, clear = false) {
-    const cell = document.querySelector(`.cell[data-row="${lowestRow}"][data-col="${col}"]`);
+    const cell = document.querySelector(
+      `.cell[data-row="${lowestRow}"][data-col="${col}"]`,
+    );
     if (!cell) return;
 
     this.clearColumnHover(col);
-    
+
     if (!clear) {
       cell.classList.add(`player${player}-hover`);
       cell.parentElement.classList.add('column-hover');
@@ -477,13 +493,13 @@ export class UIManager {
       cell.parentElement.classList.remove('column-hover');
     }
   }
-  
+
   /**
    * Clears hover state from a column
    * @param {number} col - Column index
    */
   clearColumnHover(col) {
-    document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
+    document.querySelectorAll(`.cell[data-col="${col}"]`).forEach((cell) => {
       cell.classList.remove('player1-hover', 'player2-hover');
       cell.parentElement.classList.remove('column-hover');
     });
@@ -495,7 +511,9 @@ export class UIManager {
    * @param {number} col -Column index of the cell
    */
   clearCell(row, col) {
-    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    const cell = document.querySelector(
+      `.cell[data-row="${row}"][data-col="${col}"]`,
+    );
     if (cell) {
       cell.classList = ['cell'];
     }
@@ -518,9 +536,9 @@ export class UIManager {
   updateCurrentPlayer(playerNum) {
     const currentPlayer = document.getElementById('current-player');
     const playerColor = document.getElementById('player-color');
-    
+
     if (!currentPlayer || !playerColor) return;
-    
+
     const { name, color } = this.#settingsManager.getPlayerSettings(playerNum);
     currentPlayer.textContent = name;
     playerColor.style.backgroundColor = color;
@@ -533,16 +551,17 @@ export class UIManager {
   updateWinnerDisplay(playerNum) {
     const currentPlayer = document.getElementById('current-player');
     const playerColor = document.getElementById('player-color');
-    
+
     if (!currentPlayer || !playerColor) return;
-    
+
     if (playerNum) {
       const player = this.#settingsManager.getPlayerSettings(playerNum);
       currentPlayer.textContent = `Winner: ${player.name}`;
+      playerColor.style.display = 'block';
       playerColor.style.backgroundColor = player.color;
     } else {
       currentPlayer.textContent = "It's a draw!";
-      playerColor.style.backgroundColor = "rgba(0, 0, 0, 0)";
+      playerColor.style.display = 'none';
     }
   }
 
@@ -552,7 +571,9 @@ export class UIManager {
    */
   highlightWinningCells(positions) {
     positions.forEach(({ row, col }) => {
-      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      const cell = document.querySelector(
+        `[data-row="${row}"][data-col="${col}"]`,
+      );
       if (cell) {
         cell.classList.add('winning-cell');
       }
@@ -565,7 +586,9 @@ export class UIManager {
    */
   unhighlightWinningCells(positions) {
     positions.forEach(({ row, col }) => {
-      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      const cell = document.querySelector(
+        `[data-row="${row}"][data-col="${col}"]`,
+      );
       if (cell) {
         cell.classList.remove('winning-cell');
       }
@@ -577,7 +600,7 @@ export class UIManager {
    * @param {boolean} highlight - Whether to highlight
    */
   highlightRestartButton(highlight) {
-    const restartButton = document.getElementById("restart-game");
+    const restartButton = document.getElementById('restart-game');
     if (restartButton) {
       if (highlight) {
         restartButton.classList.add('highlight');
@@ -592,17 +615,287 @@ export class UIManager {
    */
   updateStats() {
     const { player1, player2, draws } = this.#settingsManager.getAllSettings();
-    
+
     for (const el of this.#elements.stats.player1) {
       el.textContent = player1.wins;
     }
-    
+
     for (const el of this.#elements.stats.player2) {
       el.textContent = player2.wins;
     }
-    
+
     for (const el of this.#elements.stats.draws) {
       el.textContent = draws;
+    }
+  }
+
+  /**
+   * Initializes the move history panel
+   */
+  initializeHistoryPanel() {
+    const historyPanel = document.getElementById('move-history');
+    if (!historyPanel) return;
+
+    historyPanel.innerHTML = '';
+
+    const header = document.createElement('h3');
+    header.textContent = 'Move History';
+    historyPanel.appendChild(header);
+
+    const historyList = document.createElement('div');
+    historyList.id = 'history-list';
+    historyList.className = 'history-list';
+    historyPanel.appendChild(historyList);
+  }
+
+  /**
+   * Updates the move history panel with scroll-aware touch handling
+   * @param {Array<MoveResult>} moves - Array of moves to display
+   * @param {function(number):void} onMoveClick - Callback for when a move is clicked
+   * @param {function(number):void} onMoveHover - Callback for when a move is hovered
+   * @param {function():void} onMoveLeave - Callback for when mouse leaves a move
+   */
+  updateHistoryPanel(moves, onMoveClick, onMoveHover, onMoveLeave) {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+
+    historyList.innerHTML = '';
+
+    let isScrolling = false;
+    let initialScrollTop = 0;
+
+    historyList.addEventListener(
+      'touchstart',
+      () => {
+        initialScrollTop = historyList.scrollTop;
+        isScrolling = false;
+      },
+      { passive: true },
+    );
+
+    historyList.addEventListener(
+      'touchmove',
+      () => {
+        if (Math.abs(historyList.scrollTop - initialScrollTop) > 3) {
+          isScrolling = true;
+        }
+      },
+      { passive: true },
+    );
+
+    moves.reverse().forEach((move, idx) => {
+      const reversedIndex = moves.length - 1 - idx;
+      const { player, type, column } = move;
+
+      const moveItem = document.createElement('div');
+      moveItem.className = `history-item ${type === 'win' ? 'winning-move' : ''} ${type === 'draw' ? 'draw-move' : ''}`;
+      moveItem.dataset.moveIndex = reversedIndex;
+
+      const playerName = this.#settingsManager.getPlayerSettings(player).name;
+      const moveNumber = reversedIndex + 1;
+
+      let moveText = `Move ${moveNumber}: ${playerName} in column ${column + 1}`;
+      if (type === 'win') {
+        moveText += ` (WIN)`;
+      } else if (type === 'draw') {
+        moveText += ` (DRAW)`;
+      }
+
+      moveItem.textContent = moveText;
+
+      if (!this.#isTouchDevice) {
+        moveItem.addEventListener('click', () => onMoveClick(reversedIndex));
+        moveItem.addEventListener('mouseenter', () =>
+          onMoveHover(reversedIndex),
+        );
+        moveItem.addEventListener('mouseleave', onMoveLeave);
+      } else {
+        let touchTimer = null;
+        let isShowingPreview = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let hasMoved = false;
+
+        moveItem.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          hasMoved = false;
+
+          if (touchTimer) {
+            clearTimeout(touchTimer);
+          }
+
+          touchTimer = setTimeout(() => {
+            if (!hasMoved && !isScrolling) {
+              isShowingPreview = true;
+              onMoveHover(reversedIndex);
+              moveItem.classList.add('history-item-active');
+            }
+          }, 500);
+        });
+
+        moveItem.addEventListener('touchmove', (e) => {
+          const touch = e.touches[0];
+          const moveX = Math.abs(touch.clientX - touchStartX);
+          const moveY = Math.abs(touch.clientY - touchStartY);
+
+          if (moveX > 10 || moveY > 10) {
+            hasMoved = true;
+
+            if (touchTimer) {
+              clearTimeout(touchTimer);
+              touchTimer = null;
+            }
+
+            if (isShowingPreview) {
+              onMoveLeave();
+              isShowingPreview = false;
+              moveItem.classList.remove('history-item-active');
+            }
+          }
+
+          const elementAtTouch = document.elementFromPoint(
+            touch.clientX,
+            touch.clientY,
+          );
+          if (!moveItem.contains(elementAtTouch)) {
+            if (touchTimer) {
+              clearTimeout(touchTimer);
+              touchTimer = null;
+            }
+
+            if (isShowingPreview) {
+              onMoveLeave();
+              isShowingPreview = false;
+              moveItem.classList.remove('history-item-active');
+            }
+          }
+        });
+
+        moveItem.addEventListener('touchend', (e) => {
+          if (touchTimer) {
+            clearTimeout(touchTimer);
+            touchTimer = null;
+          }
+
+          if (isShowingPreview) {
+            onMoveLeave();
+            isShowingPreview = false;
+            moveItem.classList.remove('history-item-active');
+          } else if (!hasMoved && !isScrolling) {
+            onMoveClick(reversedIndex);
+          }
+        });
+
+        moveItem.addEventListener('touchcancel', () => {
+          if (touchTimer) {
+            clearTimeout(touchTimer);
+            touchTimer = null;
+          }
+
+          if (isShowingPreview) {
+            onMoveLeave();
+            isShowingPreview = false;
+            moveItem.classList.remove('history-item-active');
+          }
+        });
+      }
+
+      historyList.appendChild(moveItem);
+    });
+
+    historyList.scrollTop = 0;
+  }
+
+  /**
+   * Saves the current board state for later restoration
+   * @returns {Array<{row: number, col: number, classes: Array<string>}>} Current cell states
+   */
+  saveBoardState() {
+    const cells = document.querySelectorAll('.cell');
+    const cellStates = [];
+
+    cells.forEach((cell) => {
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      const classes = [...cell.classList];
+
+      cellStates.push({ row, col, classes });
+    });
+
+    return cellStates;
+  }
+
+  /**
+   * Restores the board to a saved state
+   * @param {Array<{row: number, col: number, classes: Array<string>}>} cellStates - Saved cell states
+   */
+  restoreBoardState(cellStates) {
+    cellStates.forEach(({ row, col, classes }) => {
+      const cell = document.querySelector(
+        `.cell[data-row="${row}"][data-col="${col}"]`,
+      );
+      if (cell) {
+        cell.className = '';
+        classes.forEach((cls) => cell.classList.add(cls));
+      }
+    });
+  }
+
+  /**
+   * Shows a preview of the board at a specific move directly on the main board
+   * @param {Array<Array<number>>} boardState - The board state to preview
+   * @param {number} moveIndex - Index of the move being previewed
+   */
+  showBoardPreview(boardState, moveIndex) {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach((cell) => {
+      cell.classList.remove('player1', 'player2', 'winning-cell');
+    });
+
+    for (let row = 0; row < boardState.length; row++) {
+      for (let col = 0; col < boardState[row].length; col++) {
+        const player = boardState[row][col];
+        if (player !== 0) {
+          const cell = document.querySelector(
+            `.cell[data-row="${row}"][data-col="${col}"]`,
+          );
+          if (cell) {
+            cell.classList.add(`player${player}`);
+          }
+        }
+      }
+    }
+
+    const board = document.getElementById('board');
+    if (board) {
+      board.classList.add('preview-mode');
+
+      const previewLabel = document.createElement('div');
+      previewLabel.className = 'preview-label';
+      previewLabel.textContent = `Move ${moveIndex + 1}`;
+
+      const existingLabel = board.querySelector('.preview-label');
+      if (existingLabel) {
+        existingLabel.remove();
+      }
+
+      board.appendChild(previewLabel);
+    }
+  }
+
+  /**
+   * Ends the board preview
+   */
+  endBoardPreview() {
+    const board = document.getElementById('board');
+    if (board) {
+      board.classList.remove('preview-mode');
+
+      const previewLabel = board.querySelector('.preview-label');
+      if (previewLabel) {
+        previewLabel.remove();
+      }
     }
   }
 }

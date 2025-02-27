@@ -17,49 +17,110 @@ Help file with instructions on how to play the game, what the controls do, and w
       <div class="card" style="display: flex; justify-content: center">
         <a class="link-button" href="index.html">Click here to go back</a>
       </div>
+      
       <div class="card">
         <h2>How to Play</h2>
-        <p>The goal of Connect 4 is to be the first player to form a line of four of your coloured tokens in a row</p>
+        <p>Connect 4 is a two player game where you take turns dropping colored tokens into a grid. The goal is to be the first player to form line (vertical, horizontal, or diagonal) of 4 tokens.</p>
+        <h3>Game Rules:</h3>
+        <ul>
+          <li>Players take turns dropping their tokens into any of the available columns.</li>
+          <li>Tokens fall to the lowest available position in the selected column.</li>
+          <li>The first player to connect four of their tokens in a row (horizontally, vertically, or diagonally) wins.</li>
+          <li>If nobody has won and the board is full then the game ends in a draw.</li>
+        </ul>
       </div>
+      
       <div class="card">
         <h2>The Board</h2>
-        <p>The game is usually played on a 6x7 board althought that can be changed in the <i>settings</i> to a minimum of 4x4 as shown below:</p>
+        <p>The game is played on a grid board, by default 6 rows by 7 columns, although this can be changed in the <i>settings</i> to anywhere from 4x4 to 10x10. Here's an example of a 4x4 board:</p>
         <br />
         <div class="board" style="max-width: 50%; grid-template-columns: repeat(4, 1fr);"><div class="column" data-col="0"><div class="cell" data-row="0" data-col="0"></div><div class="cell" data-row="1" data-col="0"></div><div class="cell" data-row="2" data-col="0"></div><div class="cell" data-row="3" data-col="0"></div></div><div class="column" data-col="1"><div class="cell" data-row="0" data-col="1"></div><div class="cell" data-row="1" data-col="1"></div><div class="cell" data-row="2" data-col="1"></div><div class="cell" data-row="3" data-col="1"></div></div><div class="column" data-col="2"><div class="cell" data-row="0" data-col="2"></div><div class="cell" data-row="1" data-col="2"></div><div class="cell" data-row="2" data-col="2"></div><div class="cell" data-row="3" data-col="2"></div></div><div class="column" data-col="3"><div class="cell" data-row="0" data-col="3"></div><div class="cell" data-row="1" data-col="3"></div><div class="cell" data-row="2" data-col="3"></div><div class="cell" data-row="3" data-col="3"></div></div></div>
       </div>
+      
+      <div class="card">
+        <h2>Making Moves</h2>
+        <h3>On Desktop:</h3>
+        <ul>
+          <li>Click on any column to drop your token</li>
+          <li>Hover over a column to see a preview of where your token will land</li>
+          <li>Use number keys (1-9, 0) to drop tokens in the corresponding columns (on a board with 10 columns the <i>zero</i> key will place a token in the 10th column)</li>
+        </ul>
+        <h3>On Mobile:</h3>
+        <ul>
+          <li>Tap on any column to drop your token</li>
+          <li>Swipe across columns to see placement previews</li>
+        </ul>
+      </div>
+      
+      <div class="card">
+        <h2>Move History</h2>
+        <p>The game keeps track of all moves made during the current game.</p>
+        <h3>On Desktop:</h3>
+        <ul>
+          <li>Hover over a move in the history to see a preview of the board at that point</li>
+          <li>Click on a move to return the game to that state</li>
+        </ul>
+        <h3>On Mobile:</h3>
+        <ul>
+          <li>Tap and hold a move in the history to see a preview of the board at that point</li>
+          <li>Tap a move to return the game to that state</li>
+        </ul>
+      </div>
+      
       <div class="card">
         <h2>The Controls</h2>
         <button class="btn btn-red">Restart</button>
         <button class="btn btn-primary">Undo</button>
         <button class="btn btn-secondary">Home</button>
         <h3>Restart</h3>
-        <p>This button simply resets the board to its original state without changing any of the stats</p>
+        <p>This button resets the board to its original state</p>
         <h3>Undo</h3>
-        <p>This button undoes the last move</p>
-        <p><strong>Note</strong> this button can undo a win/draw</p>
+        <p>This button undoes the last move in case a player made a mistake</p>
+        <p><strong>Note:</strong> This button will undo a win or draw result as well.</p>
         <h3>Home</h3>
-        <p>This button brings you back to the settings page</p>
-        <p><strong>Note</strong> this button forfeits the current game</p>
+        <p>This button brings you back to the settings page where you can change player names, colors, and board dimensions.</p>
+        <p><strong>Note:</strong> Going back to the settings forfeits the current game.</p>
         <br />
-        <p>You can also use the number keys to place tokens in their respective columns if it exists</p>
-        <p>Example: Pressing 1 will drop a token in columns 1, 2 drops one in columns 2</p>
-        <p><strong>Note</strong> pressing 0 will drop a token in colum <i>10</i> (because there is no column 0)</p>
+        <p>Keyboard controls: Use number keys to place tokens in columns:</p>
+        <ul>
+          <li>Press 1 to drop a token in column 1</li>
+          <li>Press 2 to drop a token in column 2</li>
+          <li>And so on...</li>
+          <li>Press 0 to drop a token in column 10 (if it exists)</li>
+        </ul>
       </div>
+      
       <div class="card">
-        <h3>Winning the game</h3>
+        <h2>Game Settings</h2>
+        <p>Before starting a game you can customize:</p>
+        <ul>
+          <li><strong>Player Names:</strong> Enter custom names for each player</li>
+          <li><strong>Player Colors:</strong> Choose custom colors for each player's tokens</li>
+          <li><strong>Board Size:</strong> Set the number of rows (4-10) and columns (4-10)</li>
+          <li><strong>Board Color:</strong> Change the background color of the game board</li>
+        </ul>
+        <p>All settings and statistics are saved automatically in your browser.</p>
+      </div>
+      
+      <div class="card">
+        <h2>Winning the Game</h2>
         <div class="board" style="max-width: 50%; grid-template-columns: repeat(4, 1fr);" id="board"><div class="column" data-col="0"><div class="cell" data-row="0" data-col="0"></div><div class="cell" data-row="1" data-col="0"></div><div data-row="2" data-col="0" class="cell player2"></div><div data-row="3" data-col="0" class="cell player1"></div></div><div class="column" data-col="1"><div data-row="0" data-col="1" class="cell player1 winning-cell"></div><div data-row="1" data-col="1" class="cell player1 winning-cell"></div><div data-row="2" data-col="1" class="cell player1 winning-cell"></div><div data-row="3" data-col="1" class="cell player1 winning-cell"></div></div><div class="column" data-col="2"><div class="cell" data-row="0" data-col="2"></div><div data-row="1" data-col="2" class="cell player2"></div><div data-row="2" data-col="2" class="cell player2"></div><div data-row="3" data-col="2" class="cell player2"></div></div><div class="column" data-col="3"><div class="cell" data-row="0" data-col="3"></div><div class="cell" data-row="1" data-col="3"></div><div class="cell" data-row="2" data-col="3"></div><div class="cell" data-row="3" data-col="3"></div></div></div>
-        <p>Once you win the game the winning cells will be highlighted as shown above</p>
-        <br />
-        <p>The <i>stats</i> and <i>current player</i> cards will be updated and the <i>Restart</i> button will be highlighted as shown below</p>
-        <br />
+        <p>When a player connects four tokens in a row (horizontally, vertically, or diagonally), those tokens will be highlighted with an animation as shown above.</p>
+        <p>The game will update the following:</p>
+        <ul>
+          <li>The "Current Turn" display will change to show the winner</li>
+          <li>The statistics panel will update to record the win</li>
+          <li>The Restart button will be highlighted to encourage starting a new game</li>
+        </ul>
         <button class="btn btn-red highlight">Restart</button>
-        <br />
-        <br />
-        <p>In the event of a draw all relevant cards will be updated and the user can then reset the game as well</p>
+        <h3>Draw Game</h3>
+        <p>If all positions on the board are filled without any player connecting four in a row, the game ends in a draw. In this case:</p>
+        <ul>
+          <li>The "Current Turn" display will indicate a draw</li>
+          <li>The statistics panel will update to record the draw</li>
+          <li>The Restart button will be highlighted to encourage starting a new game</li>
+        </ul>
       </div>
     </div>
-    <template id="game-template">
-      <div class="board" style="max-width: 50%" id="board"></div>
-    </template>
   </body>
 </html>

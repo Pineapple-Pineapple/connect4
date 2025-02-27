@@ -90,50 +90,52 @@ Main application interface with settings and game containers that are swapped wh
 	<div id="game-container" style="display: none;">
 	</div>
 
-	<template id="game-template">
-		<header>
-			<h1>Connect 4</h1>
-		</header>
+  <template id="game-template">
+    <header>
+      <h1>Connect 4</h1>
+    </header>
 
-		<div class="game-layout">
-			<div class="board-container">
-				<div class="board" id="board"></div>
-				<div class="game-controls">
-					<button id="restart-game" class="btn btn-red">Restart</button>
-					<button id="undo" class="btn btn-primary">Undo</button>
-					<button id="settings" class="btn btn-secondary">Home</button>
-				</div>
-			</div>
+    <div class="game-layout">
+      <div class="board-container">
+        <div class="board" id="board"></div>
+        <div class="game-controls">
+          <button id="restart-game" class="btn btn-red">Restart</button>
+          <button id="undo-move" class="btn btn-primary">Undo</button>
+          <button id="settings" class="btn btn-secondary">Home</button>
+        </div>
+      </div>
 
-			<div class="game-sidebar">
-				<div class="current-player">
-					<h2>Current Turn</h2>
-					<div class="player-indicator">
-						<span id="current-player" >Player 1</span>
-						<div class="player-color" id="player-color"></div>
-					</div>
-				</div>
+      <div class="game-sidebar">
+        <div class="current-player">
+          <h2>Current Turn</h2>
+          <div class="player-indicator">
+            <span id="current-player">Player 1</span>
+            <div class="player-color" id="player-color"></div>
+          </div>
+        </div>
 
-				<div id="game-stats" class="game-stats">
-					<h2>Stats</h2>
-					<div class="scores">
-						<div class="game-stat-item">
-							<h3><span class="name-1">Player 1</span>'s Wins</h3>
-							<h3 class="wins-1">0</h3>
-						</div>
-						<div class="game-stat-item">
-							<h3><span class="name-2">Player 2</span>'s Wins</h3>
-							<h3 class="wins-2">0</h3>
-						</div>
-						<div class="game-stat-item">
-							<h3>Draws</h3>
-							<h3 class="draws">0</h3>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</template>
+        <div id="move-history" class="move-history-panel"></div>
+
+        <div id="game-stats" class="game-stats">
+          <h2>Stats</h2>
+          <div class="scores">
+            <div class="game-stat-item">
+              <h3><span class="name-1">Player 1</span>'s Wins</h3>
+              <h3 class="wins-1">0</h3>
+            </div>
+            <div class="game-stat-item">
+              <h3><span class="name-2">Player 2</span>'s Wins</h3>
+              <h3 class="wins-2">0</h3>
+            </div>
+            <div class="game-stat-item">
+              <h3>Draws</h3>
+              <h3 class="draws">0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 
 	<script type="module" src="js/main.js"></script>
 </body>

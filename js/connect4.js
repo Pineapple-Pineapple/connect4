@@ -1,26 +1,26 @@
 /**
  * @fileoverview Core connect4 game logic that handles game state,
  * move validation, win detection, and board management
- * 
+ *
  * @typedef {Array<Array<Number>>} GameBoard
  * A 2D array representing the game board where:
  *   - 0 represents an empty cell
  *   - 1 represents Player 1's piece
  *   - 2 represents Player 2's piece
- * 
+ *
  * @typedef {Object} Position
  * @property {number} row - Row coordinate
  * @property {number} col - Column coordinate
- * 
+ *
  * @typedef {'move'|'win'|'draw'} gameResultType
- * 
+ *
  * @typedef {Object} MoveResult
  * @property {number} row - Row where piece was placed
  * @property {number} column - Column where piece was placed
  * @property {number} player - Player who made the move (1 or 2)
  * @property {gameResultType} type - Type of move result
  * @property {Array<Position>} [winningPositions] - Winning positions if a player won the game
- * 
+ *
  * @typedef {Object} GameEventMap
  * @property {function(MoveResult):void} move - Called when a move is made
  * @property {function(MoveResult):void} win - Called when a player wins
@@ -74,7 +74,7 @@ export class Connect4 {
 
   /**
    * @private
-   * @type {number|null} 
+   * @type {number|null}
    */
   #winner = null;
 
@@ -87,7 +87,7 @@ export class Connect4 {
     win: new Set(),
     draw: new Set(),
     reset: new Set(),
-    undo: new Set()
+    undo: new Set(),
   };
 
   /**
@@ -141,9 +141,11 @@ export class Connect4 {
    * Resets the game to its initial state
    */
   reset() {
-    this.#board = Array(this.#rows).fill().map(() => Array(this.#columns).fill(0))
-    this.#moveHistory = []
-    this.#winningPositions = []
+    this.#board = Array(this.#rows)
+      .fill()
+      .map(() => Array(this.#columns).fill(0));
+    this.#moveHistory = [];
+    this.#winningPositions = [];
     this.#gameOver = false;
     this.#isDrawn = false;
     this.#winner = null;
@@ -197,7 +199,7 @@ export class Connect4 {
    * @returns {Array<Position>} Array of winning positions
    */
   get winningPositions() {
-    return [ ...this.#winningPositions ];
+    return [...this.#winningPositions];
   }
 
   /**
@@ -205,7 +207,7 @@ export class Connect4 {
    * @returns {Array<Array<Number>>} The current game board
    */
   getBoard() {
-    return this.#board.map(row => [...row]);
+    return this.#board.map((row) => [...row]);
   }
 
   /**
@@ -213,7 +215,7 @@ export class Connect4 {
    * @return {number} The current player (1 or 2)
    */
   getCurrentPlayer() {
-    return this.#moveHistory.length % 2 + 1;
+    return (this.#moveHistory.length % 2) + 1;
   }
 
   /**
@@ -293,7 +295,9 @@ export class Connect4 {
    * @returns {Boolean} Whether the move is valid
    */
   isValidMove(column) {
-    return column >= 0 && column < this.#columns && this.#board[0][column] === 0;
+    return (
+      column >= 0 && column < this.#columns && this.#board[0][column] === 0
+    );
   }
 
   /**
@@ -321,10 +325,10 @@ export class Connect4 {
   }
 
   /**
-   * Checks if the last move resulted in a win 
+   * Checks if the last move resulted in a win
    * @private
-   * @param {number} row 
-   * @param {number} col 
+   * @param {number} row
+   * @param {number} col
    * @returns {boolean} Whether last move resulted in a win
    */
   #checkWin(row, col) {
@@ -335,7 +339,9 @@ export class Connect4 {
       [1, -1], // Diagonal Down-Left
     ];
 
-    return directions.some(([dr, dc]) => this.#checkDirection(row, col, dr, dc));
+    return directions.some(([dr, dc]) =>
+      this.#checkDirection(row, col, dr, dc),
+    );
   }
 
   /**
@@ -351,14 +357,15 @@ export class Connect4 {
     const player = this.#board[row][col];
     let count = 1;
 
-    let r = row + dr, c = col + dc;
+    let r = row + dr,
+      c = col + dc;
     while (this.#isValidCell(r, c) && this.#board[r][c] === player) {
       count++;
       r += dr;
       c += dc;
     }
 
-    r = row - dr, c = col - dc
+    (r = row - dr), (c = col - dc);
     while (this.#isValidCell(r, c) && this.#board[r][c] === player) {
       count++;
       r -= dr;
@@ -397,13 +404,14 @@ export class Connect4 {
     const positions = [{ row, col }];
     const player = this.#board[row][col];
 
-    let r = row + dr, c = col + dc;
+    let r = row + dr,
+      c = col + dc;
     while (this.#isValidCell(r, c) && this.#board[r][c] === player) {
       positions.push({ row: r, col: c });
       r += dr;
       c += dc;
     }
-    
+
     r = row - dr;
     c = col - dc;
     while (this.#isValidCell(r, c) && this.#board[r][c] === player) {
@@ -411,7 +419,82 @@ export class Connect4 {
       r -= dr;
       c -= dc;
     }
-    
+
     return positions;
+  }
+  /**
+   * Gets the complete move history
+   * @returns {Array<MoveResult>} Array of all moves made
+   */
+  getMoveHistory() {
+    return [...this.#moveHistory];
+  }
+
+  /**
+   * Resets the game to a specific move in history
+   * @param {number} moveIndex - Index in the move history to reset to
+   * @returns {Object|null} Information about the reset operation, or null if invalid index
+   */
+  resetToMove(moveIndex) {
+    if (moveIndex < 0 || moveIndex >= this.#moveHistory.length) {
+      return null;
+    }
+
+    this.#board = Array(this.#rows)
+      .fill()
+      .map(() => Array(this.#columns).fill(0));
+
+    const newHistory = this.#moveHistory.slice(0, moveIndex + 1);
+
+    const removedMoves = this.#moveHistory.slice(moveIndex + 1);
+
+    for (const move of newHistory) {
+      this.#board[move.row][move.column] = move.player;
+    }
+
+    this.#moveHistory = newHistory;
+
+    const lastMove = newHistory[newHistory.length - 1];
+
+    this.#gameOver = false;
+    this.#isDrawn = false;
+    this.#winningPositions = [];
+    this.#winner = null;
+
+    if (lastMove && lastMove.type === 'win') {
+      this.#gameOver = true;
+      this.#winner = lastMove.player;
+      this.#winningPositions = lastMove.winningPositions || [];
+    } else if (lastMove && lastMove.type === 'draw') {
+      this.#gameOver = true;
+      this.#isDrawn = true;
+    }
+
+    return {
+      currentHistory: newHistory,
+      removedMoves: removedMoves,
+    };
+  }
+
+  /**
+   * Get a snapshot of the board at a specific point in history
+   * @param {number} moveIndex - Index in the move history
+   * @returns {GameBoard} The board state after the specified move
+   */
+  getBoardAtMove(moveIndex) {
+    if (moveIndex < 0 || moveIndex >= this.#moveHistory.length) {
+      return null;
+    }
+
+    const tempBoard = Array(this.#rows)
+      .fill()
+      .map(() => Array(this.#columns).fill(0));
+
+    for (let i = 0; i <= moveIndex; i++) {
+      const move = this.#moveHistory[i];
+      tempBoard[move.row][move.column] = move.player;
+    }
+
+    return tempBoard;
   }
 }
