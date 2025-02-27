@@ -30,12 +30,6 @@ export class GameController {
 
   /**
    * @private
-   * @type {boolean}
-   */
-  #historyMode = false;
-
-  /**
-   * @private
    * @type {Array<{row: number, col: number, classes: Array<string>}>|null}
    */
   #savedBoardState = null;
@@ -115,7 +109,6 @@ export class GameController {
     this.#uiManager.initializeHistoryPanel();
 
     this.resetGame();
-    this.#historyMode = false;
     this.#uiManager.showGameScreen();
     this.#updateCurrentPlayer();
   }
@@ -129,8 +122,6 @@ export class GameController {
   #handleMove(column, updateColumn = true) {
     if (this.#connect4.isGameOver) return;
 
-    if (this.#historyMode) this.#historyMode = false;
-
     const result = this.#connect4.makeMove(column);
     if (!updateColumn && result) {
       this.#uiManager.updateColumnHover(
@@ -140,8 +131,6 @@ export class GameController {
         true,
       );
     }
-
-    this.#historyMode = false;
 
     this.#updateHistoryPanel();
   }
@@ -210,8 +199,6 @@ export class GameController {
     this.#uiManager.updateStats();
 
     this.#updateHistoryPanel();
-
-    this.#historyMode = true;
   }
 
   /**
@@ -227,9 +214,7 @@ export class GameController {
     const boardState = this.#connect4.getBoardAtMove(moveIndex);
     if (boardState) {
       this.#savedBoardState = this.#uiManager.saveBoardState();
-
       this.#uiManager.showBoardPreview(boardState, moveIndex);
-
       this.#isPreviewMode = true;
     }
   }
@@ -314,8 +299,6 @@ export class GameController {
       undoButton.disabled = false;
     }
 
-    this.#historyMode = false;
-
     this.#updateHistoryPanel();
   }
 
@@ -336,8 +319,6 @@ export class GameController {
       undoButton.disabled = false;
     }
 
-    this.#historyMode = false;
-
     this.#updateHistoryPanel();
   }
 
@@ -350,7 +331,6 @@ export class GameController {
     this.#uiManager.enableBoard();
     this.#uiManager.highlightRestartButton(false);
     this.#updateCurrentPlayer();
-    this.#historyMode = false;
 
     this.#uiManager.initializeHistoryPanel();
   }
@@ -457,12 +437,10 @@ export class GameController {
    * This function should be connected to the undo button
    */
   undoMove() {
-    if (this.#historyMode) {
-      this.#historyMode = false;
-    }
-
     const lastMove = this.#connect4.getLastMove();
     if (!lastMove) return;
+
+    if (this.#isPreviewMode) this.#handleHistoryItemLeave();
 
     if (lastMove.type === 'win' || lastMove.type === 'draw') {
       this.#settingsManager.decrementStats(lastMove);
@@ -489,7 +467,7 @@ export class GameController {
    * Resets the game
    */
   resetGame() {
+    if (this.#isPreviewMode) this.#handleHistoryItemLeave();
     this.#connect4.reset();
-    this.#historyMode = false;
   }
 }
