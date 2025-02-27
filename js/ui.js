@@ -70,6 +70,15 @@ export class UIManager {
   #isGameInitialized = false;
 
   /**
+   * @private
+   * @type {Object} Track bound event handlers for proper cleanup
+   */
+  #boundBoardEventHandlers = {
+    click: null,
+    columnEvents: new Map()
+  };
+
+  /**
    * @param {SettingsManager} settingsManager - The settings manager instance
    */
   constructor(settingsManager) {
@@ -193,6 +202,30 @@ export class UIManager {
   }
 
   /**
+   * Cleans up board event listeners to prevent duplicates
+   * @private
+   */
+  #cleanupBoardEventListeners() {
+    const board = document.getElementById('board');
+    if (!board) return;
+    
+    if (this.#boundBoardEventHandlers.click) {
+      board.removeEventListener('click', this.#boundBoardEventHandlers.click);
+      this.#boundBoardEventHandlers.click = null;
+    }
+    
+    for (const { element, handlers } of this.#boundBoardEventHandlers.columnEvents.values()) {
+      if (element && handlers) {
+        for (const [eventType, handler] of Object.entries(handlers)) {
+          element.removeEventListener(eventType, handler);
+        }
+      }
+    }
+    
+    this.#boundBoardEventHandlers.columnEvents.clear();
+  }
+
+  /**
    * Sets up event listeners specific to the board cells and columns
    * @private
    */
@@ -200,33 +233,47 @@ export class UIManager {
     const board = document.getElementById('board');
     if (!board) return;
 
-    board.addEventListener('click', this.#handleBoardClick.bind(this));
-
+    this.#cleanupBoardEventListeners();
+    
+    this.#boundBoardEventHandlers.click = this.#handleBoardClick.bind(this);
+    board.addEventListener('click', this.#boundBoardEventHandlers.click);
+    
     for (const col of board.children) {
-      col.addEventListener('mouseenter', () => {
-        this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
-      });
-
-      col.addEventListener('mouseleave', () => {
-        this.#dispatchEvent('columnLeave', parseInt(col.dataset.col));
-      });
-
-      col.addEventListener('mousedown', (e) => {
+      const colId = parseInt(col.dataset.col);
+      const handlers = {};
+      
+      handlers.mouseenter = () => {
+        this.#dispatchEvent('columnEnter', colId);
+      };
+      col.addEventListener('mouseenter', handlers.mouseenter);
+      
+      handlers.mouseleave = () => {
+        this.#dispatchEvent('columnLeave', colId);
+      };
+      col.addEventListener('mouseleave', handlers.mouseleave);
+      
+      handlers.mousedown = (e) => {
         if (!this.#isTouchDevice) e.preventDefault();
-      });
-
-      col.addEventListener('touchstart', (e) => {
+      };
+      col.addEventListener('mousedown', handlers.mousedown);
+      
+      handlers.touchstart = (e) => {
         e.preventDefault();
-        this.#dispatchEvent('columnEnter', parseInt(col.dataset.col));
-      });
-
-      col.addEventListener('touchmove', (e) => {
+        this.#dispatchEvent('columnEnter', colId);
+      };
+      col.addEventListener('touchstart', handlers.touchstart);
+      
+      handlers.touchmove = (e) => {
         this.#dispatchEvent('touchMove', e);
-      });
-
-      col.addEventListener('touchend', (e) => {
+      };
+      col.addEventListener('touchmove', handlers.touchmove);
+      
+      handlers.touchend = (e) => {
         this.#dispatchEvent('touchEnd', e);
-      });
+      };
+      col.addEventListener('touchend', handlers.touchend);
+      
+      this.#boundBoardEventHandlers.columnEvents.set(colId, { element: col, handlers });
     }
   }
 
@@ -378,6 +425,7 @@ export class UIManager {
    * Shows the settings screen and hides the game screen
    */
   showSettingsScreen() {
+    this.#cleanupBoardEventListeners();
     this.#elements.settingsContainer.style.display = 'block';
     this.#elements.gameContainer.style.display = 'none';
     this.#currentScreen = 'settings';
@@ -388,6 +436,7 @@ export class UIManager {
    */
   createBoard() {
     this.#initializeGameUI();
+    this.#cleanupBoardEventListeners();
 
     const board = document.getElementById('board');
     if (!board) return;

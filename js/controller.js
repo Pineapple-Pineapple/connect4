@@ -41,6 +41,17 @@ export class GameController {
   #isPreviewMode = false;
 
   /**
+   * @private
+   * @type {Object} Stores bound event handlers for proper cleanup
+   */
+  #boundGameHandlers = {
+    move: null,
+    win: null,
+    draw: null,
+    reset: null
+  };
+
+  /**
    * @param {SettingsManager} settingsManager - The settings manager instance
    * @param {UIManager} uiManager - The UI manager instance
    */
@@ -87,10 +98,17 @@ export class GameController {
     );
     this.#uiManager.addEventListener('undo', this.undoMove.bind(this));
 
-    this.#connect4.addEventListener('move', this.#handleGameMove.bind(this));
-    this.#connect4.addEventListener('win', this.#handleGameWin.bind(this));
-    this.#connect4.addEventListener('draw', this.#handleGameDraw.bind(this));
-    this.#connect4.addEventListener('reset', this.#handleGameReset.bind(this));
+    this.#boundGameHandlers = {
+      move: this.#handleGameMove.bind(this),
+      win: this.#handleGameWin.bind(this),
+      draw: this.#handleGameDraw.bind(this),
+      reset: this.#handleGameReset.bind(this)
+    };
+
+    this.#connect4.addEventListener('move', this.#boundGameHandlers.move);
+    this.#connect4.addEventListener('win', this.#boundGameHandlers.win);
+    this.#connect4.addEventListener('draw', this.#boundGameHandlers.draw);
+    this.#connect4.addEventListener('reset', this.#boundGameHandlers.reset);
   }
 
   /**
@@ -98,12 +116,27 @@ export class GameController {
    */
   startNewGame() {
     const { rows, columns } = this.#settingsManager.getBoardSettings();
+    
+    if (this.#connect4) {
+      this.#connect4.removeEventListener('move', this.#boundGameHandlers.move);
+      this.#connect4.removeEventListener('win', this.#boundGameHandlers.win);
+      this.#connect4.removeEventListener('draw', this.#boundGameHandlers.draw);
+      this.#connect4.removeEventListener('reset', this.#boundGameHandlers.reset);
+    }
+    
     this.#connect4 = new Connect4(rows, columns);
 
-    this.#connect4.addEventListener('move', this.#handleGameMove.bind(this));
-    this.#connect4.addEventListener('win', this.#handleGameWin.bind(this));
-    this.#connect4.addEventListener('draw', this.#handleGameDraw.bind(this));
-    this.#connect4.addEventListener('reset', this.#handleGameReset.bind(this));
+    this.#boundGameHandlers = {
+      move: this.#handleGameMove.bind(this),
+      win: this.#handleGameWin.bind(this),
+      draw: this.#handleGameDraw.bind(this),
+      reset: this.#handleGameReset.bind(this)
+    };
+
+    this.#connect4.addEventListener('move', this.#boundGameHandlers.move);
+    this.#connect4.addEventListener('win', this.#boundGameHandlers.win);
+    this.#connect4.addEventListener('draw', this.#boundGameHandlers.draw);
+    this.#connect4.addEventListener('reset', this.#boundGameHandlers.reset);
 
     this.#uiManager.createBoard();
     this.#uiManager.initializeHistoryPanel();
@@ -462,6 +495,19 @@ export class GameController {
     this.#uiManager.updateStats();
 
     this.#updateHistoryPanel();
+  }
+
+  /**
+   * Cleans up event listeners
+   * Used when cleaning up before starting a new game
+   */
+  cleanupEventListeners() {
+    if (this.#connect4) {
+      this.#connect4.removeEventListener('move', this.#boundGameHandlers.move);
+      this.#connect4.removeEventListener('win', this.#boundGameHandlers.win);
+      this.#connect4.removeEventListener('draw', this.#boundGameHandlers.draw);
+      this.#connect4.removeEventListener('reset', this.#boundGameHandlers.reset);
+    }
   }
 
   /**
