@@ -110,6 +110,7 @@ export class GameController {
 
     this.resetGame();
     this.#uiManager.showGameScreen();
+    this.#uiManager.updateSettingsForm();
     this.#updateCurrentPlayer();
   }
 
