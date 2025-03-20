@@ -108,8 +108,9 @@ class GameApp {
     if (save1Btn) {
       save1Btn.addEventListener('click', (e) => {
         const name = document.querySelector('.form-group > .name-1').value;
+        const color = document.querySelector('.form-group > #color-1')?.value || '#EA4A39';
         this.#settingsManager.updateSettings({
-          player1: { name },
+          player1: { name, color },
         });
 
         this.#showSavedFeedback(e.target);
@@ -120,8 +121,10 @@ class GameApp {
     if (save2Btn) {
       save2Btn.addEventListener('click', (e) => {
         const name = document.querySelector('.form-group > .name-2').value;
+        const color = document.querySelector('.form-group > #color-2')?.value || '#EEB637';
+        console.log(color);
         this.#settingsManager.updateSettings({
-          player2: { name },
+          player2: { name, color },
         });
 
         this.#showSavedFeedback(e.target);
@@ -160,12 +163,10 @@ class GameApp {
    * @private
    */
   #startGame() {
-    const player1 =
-      document.querySelector('.form-group > .name-1')?.value || 'Player 1';
-    const color1 = document.getElementById('color-1').value;
-    const player2 =
-      document.querySelector('.form-group > .name-2')?.value || 'Player 2';
-    const color2 = document.getElementById('color-2').value;
+    const player1 = document.querySelector('.form-group > .name-1')?.value || 'Player 1';
+    const color1 = document.querySelector('.form-group > #color-1').value || '#EA4A39';
+    const player2 = document.querySelector('.form-group > .name-2')?.value || 'Player 2';
+    const color2 = document.querySelector('.form-group > #color-2')?.value || '#EFB637';
     const boardRows = parseInt(
       document.getElementById('board-rows')?.value || '6',
     );
