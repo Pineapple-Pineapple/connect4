@@ -122,7 +122,6 @@ class GameApp {
       save2Btn.addEventListener('click', (e) => {
         const name = document.querySelector('.form-group > .name-2').value;
         const color = document.querySelector('.form-group > #color-2')?.value || '#EEB637';
-        console.log(color);
         this.#settingsManager.updateSettings({
           player2: { name, color },
         });
